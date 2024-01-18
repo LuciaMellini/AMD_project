@@ -1,3 +1,11 @@
 *.json
 *.pdf
 *.zip
+
+#Latex related
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.gz
+*.toc
