@@ -6,10 +6,9 @@ In particular we will:
 * compare the results, possibly also with library versions of the implemented algorithms.
 
 ## Prerequisites
-To be able to download the dataset from Kaggle it is necessary to authnticate with a Kaggle username and key. At this scope `kaggle.json` is intended to be filled out with your personal username and key in the respective fields, like suggested below.
-```json
-{
-    "username":"<USERNAME>",
-    "key":"<KEY>"
-}
+To be able to download the dataset it is necessary to authenticate with a Kaggle username and token<sup>[1](#fn1)</sup>. At this scope the first code block in the notebook `project.ipynb` is intended to be filled out with your personal username and key in the respective fields, like suggested below.
+```python
+    os.environ['KAGGLE_USERNAME'] = "<USERNAME>"
+    os.environ['KAGGLE_KEY'] = "<KEY>"
 ```
+<a name="fn1">1</a> To create a new token go to the [settings of your Kaggle account](https://www.kaggle.com/settings) under the *API* section, and push on the dedicated button.
