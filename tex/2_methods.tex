@@ -1,0 +1,18 @@
+\chapter{Methods} 
+In this Section we discuss the methods applied to find the similar review texts in the \textit{Yelp} dataset.
+
+We start by listing the modifications applied to the reviews in the original dataset to refine the research of similar items.
+
+\section{Data pre-processing}
+The text of the review is simply stored as a string, so it is quite simple to manipulate them by taking inspiration to Natural Language Processing, of course keeping in mind the end goal odf the project.
+The pre-processing steps that have been applied are the following:
+\begin{itemize}
+    \item eliminate reviews that are \texttt{None} or empty,
+    \item remove all punctuation and control characters (e.g. \texttt{\textbackslash n}, \texttt{\textbackslash t})
+    \item consider all characters in lower characters,
+    \item remove all stop words\footnote{We considered as English stopwords those provided by the \texttt{nltk.corpus} package.},
+    \item lemmatize all terms,
+    \item maintain each word only once for each review.
+\end{itemize}
+
+
