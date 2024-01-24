@@ -8,4 +8,5 @@
 *.fls
 *.log
 *.gz
+*.out
 *.toc
