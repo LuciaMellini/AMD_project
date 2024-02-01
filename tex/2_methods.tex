@@ -1,18 +1,61 @@
 \chapter{Methods} 
-In this Section we discuss the methods applied to find the similar review texts in the \textit{Yelp} dataset.
+In this section we discuss the methods applied to find similar reviews in the \textit{Yelp} dataset.
 
-We start by listing the modifications applied to the reviews in the original dataset to refine the research of similar items.
+To study the similarity between documents we have extracted tokens from each review. In Section~\ref{methods_preProcessing} we outline how we have codified the original strings by extracting the most relevant information.
 
-\section{Data pre-processing}
-The text of the review is simply stored as a string, so it is quite simple to manipulate them by taking inspiration to Natural Language Processing, of course keeping in mind the end goal odf the project.
-The pre-processing steps that have been applied are the following:
-\begin{itemize}
-    \item eliminate reviews that are \texttt{None} or empty,
-    \item remove all punctuation and control characters (e.g. \texttt{\textbackslash n}, \texttt{\textbackslash t})
-    \item consider all characters in lower characters,
-    \item remove all stop words\footnote{We considered as English stopwords those provided by the \texttt{nltk.corpus} package.},
-    \item lemmatize all terms,
-    \item maintain each word only once for each review.
-\end{itemize}
+\section{Data pre-processing}\label{methods_preProcessing}
+We would like to subdivide the reviews into smaller items on which to base our similarity evaluation. Usually one proceeds by considering the $k$-grams of a textual document, but since we want to focus on the semantics of the text, we prefer to take as tokens simply the words composing a review. We also concentrate our study on the meaning of the sentences by removing all stop words. We considered as English stopwords those provided by the \texttt{nltk.corpus} package. For the same reason we lemmatized all tokens by using the method provided in the \texttt{spacy} module. Also, for each review we maintain each token once. In this way we codify each review through it's essential information. In Section~\ref{similarItems} we explain how we can determine the affinity between reviews by comparing the elements that compose their summary.
 
+\section{Similar items with Jaccard similarity}\label{similarItems}
+In this section we analyze the similarity between the reviews using Jaccard similarity (Section~\ref{JaccardSimilarity}) between sets. To compute the affinity between pairs of reviews in Section~\ref{reviewSummaries} we introduce a succint way of storing the tokens contained in each summary of the review. This data structure we will show to be linked to the Jaccard similarity, so it is ideal for our scope. It will become evident that manipulating this data structure for our analysis is not at all efficient, so in Section~\ref{LSH} we will look at an approximate solution for determining similar items.
+
+\subsection{Jaccard similarity}\label{JaccardSimilarity}
+The Jaccard similarity between sets $S$ and $T$ is defined as:
+\begin{equation}
+    J(S,T)=\frac{|S\cap T|}{|S\cup T|}
+\end{equation}
+Simply put, we look at the elements that appear in both the sets.
+In our case the items of the sets are the tokens that we have extracted from the reviews. So we are interested in looking at the number of tokens that are shared among a pair of reviews.
+
+\subsection{Similarity preserving summaries of reviews}\label{reviewSummaries}
+To compute the Jaccard similarity we prefer to keep the extracted information about the reviews in a so called \textit{characteristic matrix}, used to represent a collection of sets. In particular we have a matrix $M\in \{0,1\}^{t\times r}$ where $t$ is the cardinality of the universal set of tokens, and $r$ is the number of reviews. The cell $M_{ij}$ is $1$ if token $i$ is present in the summarized version of review $j$.\newline
+
+With growing amounts of data it is not possible to store ht whole characteristic matrix, neither by considering the non-null cells. In fact the dimensions of the matrix are dictated by the quantity of rows, which in our case are the number of reviews times the number of tokens extracted, that can be assumed to be at least twenty. As a consequence one is obliged to store the information given by the reviews in a succint way. We have decided to adopt a data structure that has some interesting property with respect to the Jaccard similarity, namely a \textit{signature matrix}. Each row of such matrix is constructed as follows:
+\begin{enumerate}
+    \item choose a permutation of the rows of the characteristic matrix uniformly at random among all possible permutations,
+    \item apply the chosen permutation to the rows of the characteristic matrix,
+    \item apply a minhash function to all columns of the resulting matrix.
+\end{enumerate}
+A minhash function is defined as $h:\{ \text{sets} \}\to \{ \text{item\_indexes}\}$, and for a given set it returns the index of the first 1 in the indicator vector of the items for the document. The pseudo-code for constructing a signature matrix from the characteristic matrix is given in Algorithm~\ref{alg: signatureMatrix}.
+
+\begin{algorithm}
+    \label{alg: signatureMatrix}
+    \caption{Construct a signature matrix from the characteristic matrix of a collection of sets}
+    \begin{algorithmic}[1]
+        \Input
+            \Statex $r \in \{1,\dots,R\}$ item
+            \Statex $c \in \{1,\dots,C\}$ set
+            \Statex $h_i \in \{h_1,\dots,h_I\}$ hash function
+        \EndInput
+        \Statex
+        \State Initialize all entries of matrix SIG$\in \mathbb{N}^{I,C}$ to $\infty$
+        \For{$r = 1,\dots,R$}
+            \For{$i = 1,\dots,I$}
+            \State compute $h_i(r)$
+            \EndFor
+        \EndFor
+        \For{$c \in 1,\dots,C$}
+            \If{$\text{CHAR}(r,c)=1$}
+                \For{$i = 1,\dots,I$} 
+                    \State $\text{SIG}(i,c)=\min\{\text{SIG}(i,c),h_i(r)\}$
+                \EndFor
+            \EndIf
+        \EndFor
+        \Statex
+        \Output { SIG}
+        \EndOutput
+    \end{algorithmic}
+\end{algorithm}
+
+\subsection{Locality-sensitive hashing (LSH)}\label{LSH}
 
