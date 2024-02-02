@@ -17,10 +17,10 @@ The Jaccard similarity between sets $S$ and $T$ is defined as:
 Simply put, we look at the elements that appear in both the sets.
 In our case the items of the sets are the tokens that we have extracted from the reviews. So we are interested in looking at the number of tokens that are shared among a pair of reviews.
 
-\subsection{Similarity preserving summaries of reviews}\label{reviewSummaries}
+\subsection{Similarity preserving summary of the reviews}\label{reviewSummaries}
 To compute the Jaccard similarity we prefer to keep the extracted information about the reviews in a so called \textit{characteristic matrix}, used to represent a collection of sets. In particular we have a matrix $M\in \{0,1\}^{t\times r}$ where $t$ is the cardinality of the universal set of tokens, and $r$ is the number of reviews. The cell $M_{ij}$ is $1$ if token $i$ is present in the summarized version of review $j$.\newline
 
-With growing amounts of data it is not possible to store ht whole characteristic matrix, neither by considering the non-null cells. In fact the dimensions of the matrix are dictated by the quantity of rows, which in our case are the number of reviews times the number of tokens extracted, that can be assumed to be at least twenty. As a consequence one is obliged to store the information given by the reviews in a succint way. We have decided to adopt a data structure that has some interesting property with respect to the Jaccard similarity, namely a \textit{signature matrix}. Each row of such matrix is constructed as follows:
+With growing amounts of data it is not possible to store the whole characteristic matrix, neither by considering the non-null cells. In fact the dimensions of the matrix are bound by the quantity of rows, which in our case are the number of tokens extracted from all reviews. As a consequence one is obliged to store the information given by the reviews in a compact way. We have decided to adopt a data structure that has some interesting property with respect to the Jaccard similarity, namely a \textit{signature matrix}. Each row of such matrix is constructed as follows:
 \begin{enumerate}
     \item choose a permutation of the rows of the characteristic matrix uniformly at random among all possible permutations,
     \item apply the chosen permutation to the rows of the characteristic matrix,
@@ -58,4 +58,4 @@ A minhash function is defined as $h:\{ \text{sets} \}\to \{ \text{item\_indexes}
 \end{algorithm}
 
 \subsection{Locality-sensitive hashing (LSH)}\label{LSH}
-
+It would be unthinkable to compare all possible pairs of reviews to find similar ones among them. This would also mean scanning all the rows in the signature matrix to compute the relative frequency between possible pairs of reviews. So, we proceed by applying Locality-Sensitive Hashing. In this approach we filter on pairs of reviews by hashing them several times and only looking at those couples collected in the same bucket. The rationale is that similar reviews are more likely to be hashed in the same bucket, so we hope that dissimilar pairs end up in distinct buckets, and thus are never checked for similarity.
