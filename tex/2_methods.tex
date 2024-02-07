@@ -7,20 +7,21 @@ To study the similarity between documents we have extracted tokens from each rev
 We would like to subdivide the reviews into smaller items on which to base our similarity evaluation. Usually one proceeds by considering the $k$-grams of a textual document, but since we want to focus on the semantics of the text, we prefer to take as tokens simply the words composing a review. We also concentrate our study on the meaning of the sentences by removing all stop words. We considered as English stopwords those provided by the \texttt{nltk.corpus} package. For the same reason we lemmatized all tokens by using the method provided in the \texttt{spacy} module. Also, for each review we maintain each token once. In this way we codify each review through it's essential information. In Section~\ref{similarItems} we explain how we can determine the affinity between reviews by comparing the elements that compose their summary.
 
 \section{Similar items with Jaccard similarity}\label{similarItems}
-In this section we analyze the similarity between the reviews using Jaccard similarity (Section~\ref{JaccardSimilarity}) between sets. To compute the affinity between pairs of reviews in Section~\ref{reviewSummaries} we introduce a succint way of storing the tokens contained in each summary of the review. This data structure we will show to be linked to the Jaccard similarity, so it is ideal for our scope. It will become evident that manipulating this data structure for our analysis is not at all efficient, so in Section~\ref{LSH} we will look at an approximate solution for determining similar items.
+In this section we analyze the similarity between the reviews using Jaccard similarity between sets, as defined below. To compute the affinity between pairs of reviews in Section~\ref{reviewSummaries} we introduce a succint way of storing the tokens contained in each summary of the review. This data structure we will show to be linked to the Jaccard similarity, so it is ideal for our scope. It will become evident that manipulating this data structure for our analysis is not at all efficient, so in Section~\ref{LSH} we will look at an approximate solution for determining similar items.
 
-\subsection{Jaccard similarity}\label{JaccardSimilarity}
-The Jaccard similarity between sets $S$ and $T$ is defined as:
-\begin{equation}
+\paragraph{Jaccard similarity}
+\begin{definition}[JaccardSimilarity]\label{JaccardSimilarity}
+\begin{equation*}
     J(S,T)=\frac{|S\cap T|}{|S\cup T|}
-\end{equation}
+\end{equation*}
+\end{definition}
 Simply put, we look at the elements that appear in both the sets.
 In our case the items of the sets are the tokens that we have extracted from the reviews. So we are interested in looking at the number of tokens that are shared among a pair of reviews.
 
 \subsection{Similarity preserving summary of the reviews}\label{reviewSummaries}
-To compute the Jaccard similarity we prefer to keep the extracted information about the reviews in a so called \textit{characteristic matrix}, used to represent a collection of sets. In particular we have a matrix $M\in \{0,1\}^{t\times r}$ where $t$ is the cardinality of the universal set of tokens, and $r$ is the number of reviews. The cell $M_{ij}$ is $1$ if token $i$ is present in the summarized version of review $j$.\newline
+To compute the Jaccard similarity we prefer to keep the extracted information about the reviews in a so called \textsl{characteristic matrix}, used to represent a collection of sets. In particular we have a matrix $M\in \{0,1\}^{t\times r}$ where $t$ is the cardinality of the universal set of tokens, and $r$ is the number of reviews. The cell $M_{ij}$ is $1$ if token $i$ is present in the summarized version of review $j$.\newline
 
-With growing amounts of data it is not possible to store the whole characteristic matrix, neither by considering the non-null cells. In fact the dimensions of the matrix are bound by the quantity of rows, which in our case are the number of tokens extracted from all reviews. As a consequence one is obliged to store the information given by the reviews in a compact way. We have decided to adopt a data structure that has some interesting property with respect to the Jaccard similarity, namely a \textit{signature matrix}. Each row of such matrix is constructed as follows:
+With growing amounts of data it is not possible to store the whole characteristic matrix, neither by considering the non-null cells. In fact the dimensions of the matrix are bound by the quantity of rows, which in our case are the number of tokens extracted from all reviews. As a consequence one is obliged to store the information given by the reviews in a compact way. We have decided to adopt a data structure that has some interesting property with respect to the Jaccard similarity, namely a \textsl{signature matrix}. Each row of such matrix is constructed as follows:
 \begin{enumerate}
     \item choose a permutation of the rows of the characteristic matrix uniformly at random among all possible permutations,
     \item apply the chosen permutation to the rows of the characteristic matrix,
@@ -57,5 +58,68 @@ A minhash function is defined as $h:\{ \text{sets} \}\to \{ \text{item\_indexes}
     \end{algorithmic}
 \end{algorithm}
 
+A signature matrix built in such way still allows us to determine, approximately, the Jaccard similarity between reviews for Theorem~\ref{thm:Jaccard_signatures}
+
+\begin{theorem}\label{thm:Jaccard_signatures}
+    Let $S_1,S_2$ be sets and $H$ be a minhash function, then $\mathbb{P}(H(S_1)=H(S_2))=J(S_1,S_2)$
+\end{theorem}
+\begin{proof}
+    Consider the characteristic matrix of the sets $S_1$ and $S_2$. To compute $H$ we scan the rows of such matrix, that can be grouped as follows:
+    \begin{itemize}
+        \item $X$ the rows that contain a $1$ in both columns,
+        \item $Y$ the rows that contain a $1$ in only one of the two columns,
+        \item $Z$ the rows that contain a $1$ in both columns.
+    \end{itemize}
+    We have that $H(S_1)=H(S_2)$ if and only if the parallel scan of both columns in the characteristic matrix stops in the exact same row.
+    Operatively the scan depends on the kind of row it incurs in:
+    \begin{itemize}
+        \item if of $Z$-type continue scanning,
+        \item otherwise
+        \begin{itemize}
+            \item if of $Y$-type event $\{H(S_1)=H(S_2)\}$ not verified
+            \item if of $X$-type event $\{H(S_1)=H(S_2)\}$ verified
+        \end{itemize}
+    \end{itemize}
+    So we express $\mathbb{P}(H(S_1)=H(S_2))$ as the probability that the first row not of $Z$-type is of $Z$-type. With this reasoning, and keeping in mind the definition of Jaccard similarity (Definition~\ref{JaccardSimilarity}) we obtain that:
+    \begin{equation*}
+        \mathbb{P}(H(S_1)=H(S_2)) = \frac{|X|}{|X|+|Y|} = \frac{|S_1\cap S_2|}{|S_1\cup S_2|} = J(S_1,S_2).
+    \end{equation*}
+\end{proof}
+
+So, in practice we can estimate the Jaccard similarity by computing the relative frequency of having the same signature for some pair of reviews. Usually a few hundreds of rows are sufficient to build signatures that a expressive enough.
+
 \subsection{Locality-sensitive hashing (LSH)}\label{LSH}
-It would be unthinkable to compare all possible pairs of reviews to find similar ones among them. This would also mean scanning all the rows in the signature matrix to compute the relative frequency between possible pairs of reviews. So, we proceed by applying Locality-Sensitive Hashing. In this approach we filter on pairs of reviews by hashing them several times and only looking at those couples collected in the same bucket. The rationale is that similar reviews are more likely to be hashed in the same bucket, so we hope that dissimilar pairs end up in distinct buckets, and thus are never checked for similarity.
+It would be unthinkable to compare all possible pairs of reviews in the signature matrix to find similar ones among them. This would mean scanning the whole signatures to compute the relative frequency of the event $\{H(S_1)=H(S_2)\}$ between possible pairs of reviews. So, we proceed by applying Locality-Sensitive Hashing. In this approach we reduce the number of rows that determine the signature of a review by hashing so called bands of rows. The rationale is that similar reviews are more likely to be hashed in the same bucket, so we hope that dissimilar pairs end up in distinct buckets, and thus are never checked for similarity. Looking at the resulting signatures we consider as a candidate pair only those for which their Jaccard similarity exceeds a threshold $t$.
+
+We begin by dividing the signature matrix into $b$ bands of $r$ rows each. The choice of $r$ and $b$ depends on the threshold $t$ on the Jaccard similarity between pairs of reviews. 
+Let's analyze the probability of considering the pair of reviews $S$ and $T$ as a candidate. Having $b$ bands composed of $r$ rows each, and $J(S,T)=s$, we observe the following.
+\begin{equation*}
+    \begin{array}{rcl}
+        \mathbb{P}(\text{row}(S)=\text{row}(T))&=&s\\
+        \mathbb{P}(\forall \text{rows in given band }\text{row}(S)=\text{row}(T))&=&s^r\\
+        \mathbb{P}(\exists \text{row in given band}:\text{row}(S)\neq\text{row}(T) \text{ })&=&1-s^r\\
+        \mathbb{P}(\forall \text{rows }\forall\text{bands }\text{row}(S)\neq\text{row}(T) \text{ })&=&(1-s^r)^b\\
+        \mathbb{P}(\exists \text{band: }\forall \text{rows }\text{row}(S)=\text{row}(T) \text{ })&=&1-(1-s^r)^b=p(s)
+    \end{array}
+\end{equation*}
+The last probability corresponds to the chance that the pair $S$,$T$ gets chosen as a candidate similar pair assuming their level of similarity. We ask ourselves then what are the optimal $r$ and $b$ to assure the desired threshold of similarity $t$.
+In Figure~\ref{fig:s-curve} we plot $p(s)$ for some value of $r$ and $s$, also called an S-curve.
+\begin{figure}
+   \centering
+    \label{fig:s-curve}
+    \begin{tikzpicture}
+        \draw[->] (0, 0) -- (5, 0) node[right] {$s$};
+        \draw[->] (0, 0) -- (0, 5) node[above] {$p(s)$};
+        \draw[scale=4.5, domain=0:1, smooth, variable=\x] plot ({\x}, {1-(1-\x*\x)*(1-\x*\x)});
+    \end{tikzpicture}
+    \caption{S-curve}
+\end{figure}
+
+The steepest point in the S-curve is found approximately in $s^*=(\frac{1}{b})^\frac{1}{r}$, and the height of such point corresponds to probability of the pair becoming a candidate. So, given a threshold $t$ we have to choose $r$ and $b$ accordingly by satisfying the following, with $l$ being the length of the signatures:   
+
+\begin{equation*}
+    \begin{cases}
+        t=\left(\frac{1}{b}\right)^\frac{1}{r} \\
+        r\cdot b = l
+    \end{cases}
+\end{equation*}

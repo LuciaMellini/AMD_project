@@ -2,8 +2,12 @@
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage[margin=1.2in]{geometry}
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 \usepackage{amsmath}
+\usepackage{amsthm}
+\newtheorem{theorem}{Theorem}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
 \usepackage{amssymb}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
@@ -11,6 +15,7 @@
 \algnotext{EndInput}
 \algblock{Output}{EndOutput}
 \algnotext{EndOutput}
+\usepackage{tikz}
 
 \begin{document}
 \title{\huge{Finding similar items}\\
