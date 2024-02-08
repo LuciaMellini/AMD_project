@@ -7,7 +7,7 @@ To study the similarity between documents we have extracted tokens from each rev
 We would like to subdivide the reviews into smaller items on which to base our similarity evaluation. Usually one proceeds by considering the $k$-grams of a textual document, but since we want to focus on the semantics of the text, we prefer to take as tokens simply the words composing a review. We also concentrate our study on the meaning of the sentences by removing all stop words. We considered as English stopwords those provided by the \texttt{nltk.corpus} package. For the same reason we lemmatized all tokens by using the method provided in the \texttt{spacy} module. Also, for each review we maintain each token once. In this way we codify each review through it's essential information. In Section~\ref{similarItems} we explain how we can determine the affinity between reviews by comparing the elements that compose their summary.
 
 \section{Similar items with Jaccard similarity}\label{similarItems}
-In this section we analyze the similarity between the reviews using Jaccard similarity between sets, as defined below. To compute the affinity between pairs of reviews in Section~\ref{reviewSummaries} we introduce a succint way of storing the tokens contained in each summary of the review. This data structure we will show to be linked to the Jaccard similarity, so it is ideal for our scope. It will become evident that manipulating this data structure for our analysis is not at all efficient, so in Section~\ref{LSH} we will look at an approximate solution for determining similar items.
+In this section we analyze the similarity between the reviews using Jaccard similarity between sets, as defined below. To compute the affinity between pairs of reviews in Section~\ref{reviewSummaries} we introduce a compact way of storing the tokens contained in each summary of the review. This data structure we will show to be linked to the Jaccard similarity, so it is ideal for our scope. It will become evident that manipulating this data structure for our analysis is not at all efficient, so in Section~\ref{LSH} we will look at an approximate solution for determining similar items.
 
 \paragraph{Jaccard similarity}
 \begin{definition}[JaccardSimilarity]\label{JaccardSimilarity}
@@ -58,7 +58,7 @@ A minhash function is defined as $h:\{ \text{sets} \}\to \{ \text{item\_indexes}
     \end{algorithmic}
 \end{algorithm}
 
-A signature matrix built in such way still allows us to determine, approximately, the Jaccard similarity between reviews for Theorem~\ref{thm:Jaccard_signatures}
+A signature matrix built in such way still allows us to determine, approximately, the Jaccard similarity between sets for Theorem~\ref{thm:Jaccard_signatures}
 
 \begin{theorem}\label{thm:Jaccard_signatures}
     Let $S_1,S_2$ be sets and $H$ be a minhash function, then $\mathbb{P}(H(S_1)=H(S_2))=J(S_1,S_2)$
@@ -89,10 +89,11 @@ A signature matrix built in such way still allows us to determine, approximately
 So, in practice we can estimate the Jaccard similarity by computing the relative frequency of having the same signature for some pair of reviews. Usually a few hundreds of rows are sufficient to build signatures that a expressive enough.
 
 \subsection{Locality-sensitive hashing (LSH)}\label{LSH}
-It would be unthinkable to compare all possible pairs of reviews in the signature matrix to find similar ones among them. This would mean scanning the whole signatures to compute the relative frequency of the event $\{H(S_1)=H(S_2)\}$ between possible pairs of reviews. So, we proceed by applying Locality-Sensitive Hashing. In this approach we reduce the number of rows that determine the signature of a review by hashing so called bands of rows. The rationale is that similar reviews are more likely to be hashed in the same bucket, so we hope that dissimilar pairs end up in distinct buckets, and thus are never checked for similarity. Looking at the resulting signatures we consider as a candidate pair only those for which their Jaccard similarity exceeds a threshold $t$.
+It would be unthinkable to compare all possible pairs of reviews in the signature matrix to find similar ones among them. This would mean scanning the whole signatures to compute the relative frequency of the event $\{H(S_1)=H(S_2)\}$ between possible pairs of reviews. So, we proceed by applying Locality-Sensitive Hashing. In this approach we reduce the number of rows that determine the signature of a review by hashing so called \textsl{bands} of rows. The rationale is that similar reviews are more likely to be hashed in the same bucket, so we hope that dissimilar pairs end up in distinct buckets, and thus are never checked for similarity. \newline
 
-We begin by dividing the signature matrix into $b$ bands of $r$ rows each. The choice of $r$ and $b$ depends on the threshold $t$ on the Jaccard similarity between pairs of reviews. 
-Let's analyze the probability of considering the pair of reviews $S$ and $T$ as a candidate. Having $b$ bands composed of $r$ rows each, and $J(S,T)=s$, we observe the following.
+We begin by dividing the signature matrix into $b$ bands of $r$ rows each. The choice of $r$ and $b$ depends on the threshold $t$ on the Jaccard similarity. 
+
+To determine the relationship between the parameters we analyze the probability of considering the pair of reviews $S$ and $T$ as a candidate. Having $b$ bands composed of $r$ rows each, and $J(S,T)=s$, we observe the following.
 \begin{equation*}
     \begin{array}{rcl}
         \mathbb{P}(\text{row}(S)=\text{row}(T))&=&s\\
@@ -102,20 +103,38 @@ Let's analyze the probability of considering the pair of reviews $S$ and $T$ as 
         \mathbb{P}(\exists \text{band: }\forall \text{rows }\text{row}(S)=\text{row}(T) \text{ })&=&1-(1-s^r)^b=p(s)
     \end{array}
 \end{equation*}
-The last probability corresponds to the chance that the pair $S$,$T$ gets chosen as a candidate similar pair assuming their level of similarity. We ask ourselves then what are the optimal $r$ and $b$ to assure the desired threshold of similarity $t$.
-In Figure~\ref{fig:s-curve} we plot $p(s)$ for some value of $r$ and $s$, also called an S-curve.
+The probability in the last row corresponds to the chance that the pair $S$,$T$ gets chosen as a candidate pair with level of similarity equal to $s$.
+In Figures~\ref{fig:s-curve1} and ~\ref{fig:s-curve1} we plot $p(s)$ for some values of $r$ and $b$, also called an S-curve. One observes that this function can be seen as a continuous approximation of the threshold function.
 \begin{figure}
    \centering
-    \label{fig:s-curve}
+    \label{fig:s-curve1}
     \begin{tikzpicture}
-        \draw[->] (0, 0) -- (5, 0) node[right] {$s$};
-        \draw[->] (0, 0) -- (0, 5) node[above] {$p(s)$};
-        \draw[scale=4.5, domain=0:1, smooth, variable=\x] plot ({\x}, {1-(1-\x*\x)*(1-\x*\x)});
+        \draw[->] (0, 0) -- (5.5, 0) node[right] {$s$};
+        \draw[->] (0, 0) -- (0, 5.5) node[above] {$p(s)$};
+        \draw[dotted] (0.79370*5,0) node[below]{$s*$} -- (0.79370*5,0.75*5) ;
+        \draw[scale=5, domain=0:1, smooth, variable=\x] plot ({\x}, {1-(1-\x*\x*\x)*(1-\x*\x*\x)});
     \end{tikzpicture}
-    \caption{S-curve}
+    \caption{S-curve - $r$=2 $b$=3}
 \end{figure}
 
-The steepest point in the S-curve is found approximately in $s^*=(\frac{1}{b})^\frac{1}{r}$, and the height of such point corresponds to probability of the pair becoming a candidate. So, given a threshold $t$ we have to choose $r$ and $b$ accordingly by satisfying the following, with $l$ being the length of the signatures:   
+\begin{figure}
+    \centering
+     \label{fig:s-curve2}
+     \begin{tikzpicture}
+         \draw[->] (0, 0) -- (5.5, 0) node[right] {$s$};
+         \draw[->] (0, 0) -- (0, 5.5) node[above] {$p(s)$};
+         \draw[dotted] (0.57735*5,0) node[below]{$s*$} -- (0.57735*5,0.703703*5) ;
+         \draw[scale=5, domain=0:1, smooth, variable=\x] plot ({\x}, {1-(1-\x*\x)*(1-\x*\x)*(1-\x*\x)});
+     \end{tikzpicture}
+     \caption{S-curve - $r$=3 $b$=2}
+ \end{figure}
+The steepest point in the S-curve is found approximately in $s^*=(\frac{1}{b})^\frac{1}{r}$, and corresponding height of $s*$ indicates to probability of pair becoming a candidate. 
+
+Now, for each of the $b$ portions of the signatures we apply a 
+hash function having a great enough bucket. This avoids hashing different signature portions to the same value, introducing false positives. Also, for each band we apply distinct hash functions, subsequently signatures with two equal vectors in separate bands are hashed differently. In this way we avoid that the similarity between signatures depends on a specific hashing function. So, with the LSH approach we have obtained a new compact representation for each review.
+
+\subsection{Choosing candidate pairs}
+We use the hashed signatures constructed with LSH to extract a subset of similar pairs of reviews. A couple is chosen as a candidate only if the Jaccard similarity of its representations exceeds a given a threshold $t$. Observing Figures~\ref{fig:s-curve1} and ~\ref{fig:s-curve1} we see how $r$ and $b$ influence the position of the inflection point in the S-curve. So if we would like to choose $r$ and $b$ such that $t=s^*$, so that the probability of choosing a  pair rises when going above the threshold. As a consequence we have to choose $r$ and $b$ so to satisfy the following, bearing in mind that $l$ is the length of the signatures:   
 
 \begin{equation*}
     \begin{cases}
@@ -123,3 +142,16 @@ The steepest point in the S-curve is found approximately in $s^*=(\frac{1}{b})^\
         r\cdot b = l
     \end{cases}
 \end{equation*}
+Solving this system for $r$ we have that~\footnote{$W$ is the Lambert $W$ function, used to solve equations in the form $we^{w}=z$ for $w$.}
+\begin{equation*}
+    r=-\frac{W(-l\ln(t))}{\ln(t)}
+\end{equation*}
+
+Having the representation of the reviews obtained though LSH, the candidate pairs are those reviews for which the Jaccard similarity of the hashed signatures is larger than $t$. These couples are only contemplated as possible similar reviews given the approximation introduced by the LSH approach. For this reason, $r$ and $b$ can be tuned further to limit the amount of false positives or false negatives.
+\begin{description}
+    \item [\boldmath{$(\frac{1}{b})^\frac{1}{r}<s^*$}] to limit false negatives,
+    \item [\boldmath{$(\frac{1}{b})^\frac{1}{r}>s^*$}] to limit false positives.
+\end{description}
+
+Regardless one has to check whether a candidate pair is indeed similar. We keep the reviews for which the Jaccard similarity computed on the respective signatures exceeds the threshold. We settle on the approximation of the Jaccard similarity computed though the relative frequency of equal elements in the signatures.
+As a consequence one gains speed in the latter case since there are less candidates to evaluate. 
