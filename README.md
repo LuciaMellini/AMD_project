@@ -1,5 +1,5 @@
 # Finding similar items
-The aim of this project is to detect pairs of similar tweets from the `text` field of the Kaggle [Yelp](https://www.kaggle.com/datasets/yelp-dataset/yelp-dataset) dataset.
+The aim of this project is to detect pairs of similar tweets from the `text` field of the reviews in the Kaggle [Yelp](https://www.kaggle.com/datasets/yelp-dataset/yelp-dataset) dataset.
 In particular we will:
 * pre-process the textual data,
 * implement techniques to detect pairs of similar textual items according to the Jaccard similarity measure,
