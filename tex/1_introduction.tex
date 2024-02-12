@@ -1,2 +1,8 @@
-\chapter{Introduction}
-In this document we will refer to the text of the reviews as reviews.
+\chapter{Introduction}\label{introduction}
+The aim of this project is to detect pairs of similar tweets from the \texttt{text} field of the reviews in the Kaggle \textit{Yelp} dataset\footnote{The Web page of the cited dataset can be found at https://www.kaggle.com/datasets/yelp-dataset/yelp-dataset}. In this document we will refer to the text of the reviews simply as \textit{reviews}.
+
+We begin by illustrating the methods that have been applied to study the similarity between reviews. In Chapter~\ref{methods} we show the similarity measures that have been applied to evaluate pairs of reviews. In particular we describe the processed used to find review pairs with a certain Jaccard similarity. Seen the potential size of the dataset we have taken into account approaches targeted for massive datasets.
+
+We proceed by showing how we have applied these methods to the dataset itself in Section~\ref{experiments}, specifically how we have itemized the reviews by extracting tokens from the relative strings (Section~\ref{experiments_preProcessing}). After this preliminary step we list the parameters that we have chosen to use when running the process described in the previous sections.
+
+Finally we show how the various sets of similar reviews that have been found through the different parameters. We evaluate the quality of these pairs by comparing them with a baseline similarity measure based on word embedding.
