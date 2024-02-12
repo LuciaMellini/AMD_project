@@ -1,10 +1,9 @@
-\chapter{Methods} 
-In this section we discuss the methods applied to find similar reviews in the \textit{Yelp} dataset.
+\chapter{Methods} \label{methods}
 
-To study the similarity between documents we have extracted tokens from each review. In Section~\ref{methods_preProcessing} we outline how we have codified the original strings by extracting the most relevant information.
 
-\section{Data pre-processing}\label{methods_preProcessing}
-We would like to subdivide the reviews into smaller items on which to base our similarity evaluation. Usually one proceeds by considering the $k$-grams of a textual document, but since we want to focus on the semantics of the text, we prefer to take as tokens simply the words composing a review. We also concentrate our study on the meaning of the sentences by removing all stop words. We considered as English stopwords those provided by the \texttt{nltk.corpus} package. For the same reason we lemmatized all tokens by using the method provided in the \texttt{spacy} module. Also, for each review we maintain each token once. In this way we codify each review through it's essential information. In Section~\ref{similarItems} we explain how we can determine the affinity between reviews by comparing the elements that compose their summary.
+
+
+In this section we discuss the methods applied to find similar reviews in the \textit{Yelp} dataset. We focus on the similarity between sets measured with Jaccard similarity. As this scope we present some approaches that can be applied to large datasets. We begin by representing each of the set in a summarized way through so called \textit{signatures}, as described in Section~\ref{similarItems}. Subsequently we apply the LSH technique to compress such information even further (Section~\ref{LSH}). We will then see in Section~\ref{choosingCandidatePairs} that one can choose the parameters of LSH to obtain approximate candidate pairs with Jaccard similarity that exceeds a given threshold. From this collection we will extract pairs of similar sets.
 
 \section{Similar items with Jaccard similarity}\label{similarItems}
 In this section we analyze the similarity between the reviews using Jaccard similarity between sets, as defined below. To compute the affinity between pairs of reviews in Section~\ref{reviewSummaries} we introduce a compact way of storing the tokens contained in each summary of the review. This data structure we will show to be linked to the Jaccard similarity, so it is ideal for our scope. It will become evident that manipulating this data structure for our analysis is not at all efficient, so in Section~\ref{LSH} we will look at an approximate solution for determining similar items.
@@ -133,7 +132,7 @@ The steepest point in the S-curve is found approximately in $s^*=(\frac{1}{b})^\
 Now, for each of the $b$ portions of the signatures we apply a 
 hash function having a great enough bucket. This avoids hashing different signature portions to the same value, introducing false positives. Also, for each band we apply distinct hash functions, subsequently signatures with two equal vectors in separate bands are hashed differently. In this way we avoid that the similarity between signatures depends on a specific hashing function. So, with the LSH approach we have obtained a new compact representation for each review.
 
-\subsection{Choosing candidate pairs}
+\subsection{Choosing candidate pairs}\label{choosingCandidatePairs}
 We use the hashed signatures constructed with LSH to extract a subset of similar pairs of reviews. A couple is chosen as a candidate only if the Jaccard similarity of its representations exceeds a given a threshold $t$. Observing Figures~\ref{fig:s-curve1} and ~\ref{fig:s-curve1} we see how $r$ and $b$ influence the position of the inflection point in the S-curve. So if we would like to choose $r$ and $b$ such that $t=s^*$, so that the probability of choosing a  pair rises when going above the threshold. As a consequence we have to choose $r$ and $b$ so to satisfy the following, bearing in mind that $l$ is the length of the signatures:   
 
 \begin{equation*}
