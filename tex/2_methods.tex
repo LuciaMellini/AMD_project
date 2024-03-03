@@ -1,8 +1,4 @@
 \chapter{Methods} \label{methods}
-
-
-
-
 In this section we discuss the methods applied to find similar reviews in the \textit{Yelp} dataset. We focus on the similarity between sets measured with Jaccard similarity. As this scope we present some approaches that can be applied to large datasets. We begin by representing each of the set in a summarized way through so called \textit{signatures}, as described in Section~\ref{similarItems}. Subsequently we apply the LSH technique to compress such information even further (Section~\ref{LSH}). We will then see in Section~\ref{choosingCandidatePairs} that one can choose the parameters of LSH to obtain approximate candidate pairs with Jaccard similarity that exceeds a given threshold. From this collection we will extract pairs of similar sets.
 
 \section{Similar items with Jaccard similarity}\label{similarItems}

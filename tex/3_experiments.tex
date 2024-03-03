@@ -1,4 +1,16 @@
 \chapter{Experiments}\label{experiments}
+In this section we initially analyze how the review in the data sets have ben pre-processed to itemize the text strings.
+
 \section{Data pre-processing}\label{experiments_preProcessing}
-% We would like to subdivide the reviews into smaller items on which to base our similarity evaluation. We also concentrate our study on the meaning of the sentences by removing all stop words. We considered as English stopwords those provided by the \texttt{nltk.corpus} package. For the same reason we lemmatized all tokens by using the method provided in the \texttt{spacy} module. Also, for each review we maintain each token once. In this way we codify each review through it's essential information.
-\section{Jaccard similarity}
+We would like to subdivide the reviews into smaller items on which to base our similarity evaluation. In this project we have considered two atomic elements in which to split a string, from here on called \textsl{shingles} and \textsl{tokens}. In both cases we maintain each item appearing in the whole dataset once.    
+\paragraph*{Shingles}
+We look at the reviews from more of a syntactical point of view by concentrating on the construction of the sentence. In this instance we look at all the substrings of length $k$ contained in the strings, called $k$-grams or \textsl{shingles}.
+The value of $k$ is chosen on the basis of the length of the document to be subdivided. We observe that the number of possible $k$-grams is in the order of the quantity of characters that compose it (to be exact $l-k+1$ where $l$ is the document length). So we would like to have $k$ great enough such that the probability that of finding a specific shingle in a document is small. It also to be said that it is very unlikely that all shingles appear in a corpus of text. To take this into account one may consider a larger $k$ as to differentiate the documents better. Since we will not encounter all of those shingles, we can hash those elements onto a bucket that contains only all possible $k$-grams. Here we choose to hash $9$-grams onto possible $5$-grams, and we leave the hashed singles in numeric form.
+
+\paragraph*{Tokens}
+We give more importance to the semantical point of view, by looking at the lemmas that form a sentence. In this case we divide the reviews in the terms that compose it, and to emphasize the meaning of the review. We have modified the reviews by getting rid of the stop words appearing in the tokens to extract the actual semantics of the text. We considered as English stop words those provided by the \texttt{nltk.corpus} package. Then we lemmatize the remaining tokens by using the method provided in the \texttt{spacy} module: we are oblivious about the various inflections of a certain word.
+
+We then form shingles made of $k$ of such lemmas, from here on called \textsl{tokens}.
+
+\section{Similar items with Jaccard similarity}
+\section{Parameter choice}
