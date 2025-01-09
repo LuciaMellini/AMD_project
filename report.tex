@@ -1,0 +1,36 @@
+\documentclass{report}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1.2in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{subcaption}
+\newtheorem{theorem}{Theorem}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\usepackage{amssymb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\algblock{Input}{EndInput}
+\algnotext{EndInput}
+\algblock{Output}{EndOutput}
+\algnotext{EndOutput}
+\usepackage{tikz}
+\newcommand{\term}[1]{\textsl{#1}}
+
+\begin{document}
+\title{\huge{Finding similar items}\\
+\Large Report}
+\author{Lucia Anna Mellini \\
+ 28597A}
+\date{Academic year 2024/2025}
+\maketitle
+
+\tableofcontents
+
+\include{tex/1_introduction}
+\include{tex/2_methods}
+\include{tex/3_experiments}
+
+\end{document}

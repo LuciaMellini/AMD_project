@@ -1,0 +1,103 @@
+\chapter{Methods} \label{methods}
+It would be unthinkable to compare all possible pairs of items in the dataset to find similar ones, so we would like to focus only on pairs that are likely to be similar. In Section~\ref{cosineSimilarity} we define the distance measure we have chosen to evaluate the similarity between movies in the dataset. Then we introduce Locality-Sensitive Hashing (LSH) in Section~\ref{LSH}, a general theory to refine the choice of similar items to evaluate.
+
+\section{Cosine similarity}\label{cosineSimilarity}
+The cosine distance is a measure of similarity is used in spaces that have multiple dimensions, such as Euclidean spaces. In such a space points may be seen as directions from the origin towards the points. The cosine distance between two points is the angle that the vectors to those points make. The degree of this angle will be in the range $[0,180]$, regardless of the number of dimensions the space has. The cosine distance between two points can be determined by computing the cosine of the angle between the vectors representing the points (Definition~\ref{def:cosine}), and then applying the $\arccos$ function to translate to an angle in the  $[0,180]$ range.
+ 
+\begin{definition}[cosine]\label{def:cosine}
+    Given two vectors $x$ and $y$ in a space, the cosine of the angle between them is defined as
+    \begin{equation}
+        \cos(x,y)=\frac{x\cdot y}{\|x\|\|y\|}
+    \end{equation}
+\end{definition}
+
+We then define the cosine similarity as how far a given angle (represented by its cosine) is from 180 degrees, expressed as a fraction of a semicircle (Definition~\ref{def:cosineSimilarity}).
+
+\begin{definition}[cosine similarity]\label{def:cosineSimilarity}
+    Given two vectors $x$ and $y$ in a space, their cosine similarity is defined as
+    \begin{equation}
+        \text{SIM}(x,y)=\frac{180-\arccos\left(\cos(x,y)\right)}{180}
+    \end{equation}
+\end{definition}
+
+
+\section{Locality-Sensitive Hashing (LSH)}\label{LSH}
+Generally LSH entails hashing items several times, so that similar items are more likely to be hashed to the same bucket than dissimilar items are. We then consider any pair that hashed to the same bucket for any of the hashings to be a \term{candidate pair}. This technique can result in false positives and false negatives in the following cases:
+\begin{description}
+    \item[false negatives] when pairs of truly similar items do not hash to the same bucket for any of the hashings,
+    \item[false positives] when pairs of dissimilar items hash to the same bucket for any of the hashings, that will be considered as candidate pairs. 
+\end{description}
+In the following sections, we study how to generate candidate pairs using the banding technique and how to choose the appropriate parameters to balance the trade-off between false positives and false negatives.
+
+\subsection{Banding technique}\label{bandingTechnique}
+We call the compressed representation of an item a \term{signature}. The signature of an item is an array obtained by applying various hashing functions to the item. Once aligned, these arrays form a signature matrix $M\in\mathbb{N}^{m\times n}$, where $n$ is the number of elements in the dataset, and $m$ is the length of the signatures. One can choose the candidate pairs by dividing the signature matrix into $b$ bands consisting of $r$ rows each. For each of these bands we hash its $r$ values of the signature to some large bucket. To reduce the probability of false positives we:
+\begin{itemize}
+    \item choose a distinct bucket array for each band, so that columns (items) with the same vector in different bands will not hash to the same bucket,
+    \item apply a hash function having a great enough bucket for each of the $b$ portions of the signatures, so that different signature portions are not hashed to the same value.
+\end{itemize}
+
+The choice of $r$ and $b$ depends on the desired threshold $t$ on the similarity between items. 
+
+To determine the relationship between the parameters we analyze the probability of considering the pair of items $S$ and $T$ as a candidate. Having $b$ bands composed of $r$ rows each, and $\text{SIM}(S,T)=s$, we observe the following.
+\begin{equation*}
+    \begin{array}{rcl}
+        \mathbb{P}(\text{row}(S)=\text{row}(T))&=&s\\
+        \mathbb{P}(\forall \text{rows in given band }\text{row}(S)=\text{row}(T))&=&s^r\\
+        \mathbb{P}(\exists \text{row in given band}:\text{row}(S)\neq\text{row}(T) \text{ })&=&1-s^r\\
+        \mathbb{P}(\forall \text{rows }\forall\text{bands }\text{row}(S)\neq\text{row}(T) \text{ })&=&(1-s^r)^b\\
+        \mathbb{P}(\exists \text{band: }\forall \text{rows }\text{row}(S)=\text{row}(T) \text{ })&=&1-(1-s^r)^b=p(s)
+    \end{array}
+\end{equation*}
+The probability in the last row corresponds to the chance that the pair $(S,T)$ gets chosen as a candidate pair with level of similarity equal to $s$.
+In Figures~\ref{fig:s-curve1} and ~\ref{fig:s-curve2} we plot $p(s)$ for some values of $r$ and $b$, also called an S-curve. One observes that this curve can be seen as a continuous approximation of the threshold function.
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \begin{tikzpicture}
+            \draw[->] (0, 0) -- (5.5, 0) node[right] {$s$};
+            \draw[->] (0, 0) -- (0, 5.5) node[above] {$p(s)$};
+            \draw[dotted] (0.79370*5,0) node[below]{$s*$} -- (0.79370*5,0.75*5) ;
+            \draw[scale=5, domain=0:1, smooth, variable=\x] plot ({\x}, {1-(1-\x*\x*\x)*(1-\x*\x*\x)});
+        \end{tikzpicture}
+        \caption{S-curve - $r$=2, $b$=3}
+        \label{fig:s-curve1}
+    \end{subfigure}
+    \hspace{1cm}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \begin{tikzpicture}
+            \draw[->] (0, 0) -- (5.5, 0) node[right] {$s$};
+            \draw[->] (0, 0) -- (0, 5.5) node[above] {$p(s)$};
+            \draw[dotted] (0.57735*5,0) node[below]{$s*$} -- (0.57735*5,0.703703*5) ;
+            \draw[scale=5, domain=0:1, smooth, variable=\x] plot ({\x}, {1-(1-\x*\x)*(1-\x*\x)*(1-\x*\x)});
+        \end{tikzpicture}
+        \caption{S-curve - $r$=3, $b$=2}
+        \label{fig:s-curve2}
+    \end{subfigure}
+    \caption{S-curve examples}
+\end{figure}
+The steepest point in the S-curve is found approximately in $s^*=(\frac{1}{b})^\frac{1}{r}$, and corresponding height of $s*$ indicates the probability of a pair becoming a candidate. 
+
+
+\subsection{Choosing candidate pairs}\label{choosingCandidatePairs}
+We use the hashed signatures constructed with LSH to extract a subset of similar pairs of reviews. A couple is chosen as a candidate only if the cosine similarity of their representations exceeds a given a threshold $t$. Observing Figures~\ref{fig:s-curve1} and ~\ref{fig:s-curve1} we see how $r$ and $b$ influence the position of the inflection point in the S-curve. So we would like to choose $r$ and $b$ such that $t=s^*$, so that the probability of choosing a pair rises when going above the threshold. As a consequence we have to choose $r$ and $b$ so to satisfy the following, bearing in mind that $l$ is the length of the signatures:   
+
+\begin{equation*}
+    \begin{cases}
+        t=\left(\frac{1}{b}\right)^\frac{1}{r} \\
+        r\cdot b = l
+    \end{cases}
+\end{equation*}
+Solving this system for $r$ we have that~\footnote{$W$ is the Lambert $W$ function, used to solve equations in the form $we^{w}=z$ for $w$.}
+\begin{equation*}
+    r=-\frac{W(-l\ln(t))}{\ln(t)}
+\end{equation*}
+
+Having the representation of the items obtained though LSH, the candidate pairs are those items for which the cosine similarity of the hashed signatures is larger than $t$. Regardless, one has to check whether a candidate pair is indeed similar. For this reason, $r$ and $b$ can be tuned further to limit the amount of false positives or false negatives.
+\begin{description}
+    \item [\boldmath{$(\frac{1}{b})^\frac{1}{r}<s^*$}] to limit false negatives,
+    \item [\boldmath{$(\frac{1}{b})^\frac{1}{r}>s^*$}] to limit false positives.
+\end{description}
+
+\subsection{Locality Sensitive family for cosine similarity}\label{LSfamily}
