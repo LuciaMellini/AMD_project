@@ -17,6 +17,7 @@
 *.ind
 *.inx
 *.dvi
+*gz
 *.pdf
 *.ps
 *.eps
@@ -25,3 +26,5 @@
 *.vrb
 *.spl
 *.run.xml
+
+spark*/
