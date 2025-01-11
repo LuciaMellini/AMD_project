@@ -1,2 +1,44 @@
 \chapter{Experiments}\label{experiments}
+In this Chapter we illustrate how we have chosen to pre-process the movie data. Then, in Section~\ref{experiments_parameters} we outline the parameters that have been chosen to determine similar items in the dataset. Finally, we study the results of the experiments in Section~\ref{experiments_results}.
 \section{Data pre-processing}\label{experiments_preProcessing}
+First we motivate the choice of the features on which we have based the comparison between movies.
+\subsection{Chosen movie features}
+We have chosen to focus only on some of the features available for each movie. Specifically we have considered the following attributes, grouped according to the categories provided by the dataset:
+\begin{itemize}
+    \item \textit{actors}
+    \begin{itemize}
+        \item names of the first 6 starring actors
+    \end{itemize}
+    \item \textit{crew}
+    \begin{itemize}
+        \item director(s)
+    \end{itemize}
+    \item \textit{genre}
+    \begin{itemize}
+        \item list of genres
+    \end{itemize}
+    \item \textit{movies}
+    \begin{itemize}
+        \item title
+        \item date (release year)
+        \item duration (in minutes)
+        \item rating (on a scale from 0 to 5)
+    \end{itemize}
+    \item \textit{themes}
+    \begin{itemize}
+        \item list of themes
+    \end{itemize}
+\end{itemize}
+
+The rational behind the exclusion of the other attributes is based on the aspects that a user would consider when choosing a movie. For example, we believe that the six main actors, ordered by importance in the dataset, are sufficient to also include possible cameos that could push someone to watch a movie. Also, a generic viewer could be interested in who directed the movie, but less in the writer of the screenplay, or other crew members. These aspects could be added for a more interested audience. We have chosen to remove the tagline and the description of the movies since they are possibly unique or very dissimilar for every movie. Also, this would have involved a more extensive natural language processing step. The other features provided (the country of the movie's production company, its languages, its the posters, the information about the movie's releases and the studios where it was made) are strongly related to the production and release aspects, so not of particular interest to the user. If the evaluation of similar items where to be integrated in a recommendation system it would be fitting to check if the user knows a language in which a suggested movie is produced.
+\section{Chosen parameters}\label{experiments_parameters}
+\section{Results}\label{experiments_results}
+
+\subsection{Data point embedding}
+To preserve the independent role of each attribute we have decided to measure their similarity using cosine distance. This entails translating all data regarding a movie into a vector with components in $\mathbb{R}$. It is evident that the textual attributes have to be transformed into values to be able to work in an Euclidean space. The following paragraphs are dedicated to these transformations.
+
+\subsubsection{Text encoding - name, genres, themes}
+To do this, we have relied on the static vectors provided by SpaCy~\cite{Montani2023SpaCy}. We have used the medium-sized English model, which is trained on web data\footnote{Details at \url{https://spacy.io/models/en\#en_core_web_md}}. We have then averaged the vectors of the words in the text to obtain a single vector for the text.
+
+
+\subsubsection{Text encoding - actors, directors}
