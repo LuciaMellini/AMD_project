@@ -22,6 +22,7 @@ We then define the cosine similarity as how far a given angle (represented by it
 
 
 \section{Locality-Sensitive Hashing (LSH)}\label{LSH}
+Locality-Sensitive Hashing (LSH) is a technique used to find similar items in a dataset, first introduced in~\cite{Indyk1998approximatendyk1998approximate}\cite{Gionis1999similarity}.
 Generally LSH entails hashing items several times, so that similar items are more likely to be hashed to the same bucket than dissimilar items are. We then consider any pair that hashed to the same bucket for any of the hashings to be a \term{candidate pair}. This technique can result in false positives and false negatives in the following cases:
 \begin{description}
     \item[false negatives] when pairs of truly similar items do not hash to the same bucket for any of the hashings,
@@ -30,7 +31,7 @@ Generally LSH entails hashing items several times, so that similar items are mor
 In the following sections, we study how to generate candidate pairs using the banding technique and how to choose the appropriate parameters to balance the trade-off between false positives and false negatives.
 
 \subsection{Banding technique}\label{bandingTechnique}
-We call the compressed representation of an item a \term{signature}. The signature of an item is an array obtained by applying various hashing functions to the item. Once aligned, these arrays form a signature matrix $M\in\mathbb{N}^{m\times n}$, where $n$ is the number of elements in the dataset, and $m$ is the length of the signatures. One can choose the candidate pairs by dividing the signature matrix into $b$ bands consisting of $r$ rows each. For each of these bands we hash its $r$ values of the signature to some large bucket. To reduce the probability of false positives we:
+We call the compressed representation of an item a \term{signature}. The signature of an item is an array obtained by applying various hashing functions to the item. Once aligned, these arrays form a signature matrix $S\in\mathbb{N}^{l\times n}$, where $n$ is the number of elements in the dataset, and $l$ is the length of the signatures. One can choose the candidate pairs by dividing the signature matrix into $b$ bands consisting of $r$ rows each. For each of these bands we hash its $r$ values of the signature to some large bucket. To reduce the probability of false positives we:
 \begin{itemize}
     \item choose a distinct bucket array for each band, so that columns (items) with the same vector in different bands will not hash to the same bucket,
     \item apply a hash function having a great enough bucket for each of the $b$ portions of the signatures, so that different signature portions are not hashed to the same value.
@@ -101,3 +102,6 @@ Having the representation of the items obtained though LSH, the candidate pairs 
 \end{description}
 
 \subsection{Locality Sensitive family for cosine similarity}\label{LSfamily}
+~\cite{Charikar2002similarity}
+% contribution of each feature to PCA
+% compare to UMAP results
