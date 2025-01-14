@@ -1,7 +1,8 @@
 \chapter{Experiments}\label{experiments}
 In this Chapter we illustrate how we have chosen to pre-process the movie data. Then, in Section~\ref{experiments_parameters} we outline the parameters that have been chosen to determine similar items in the dataset. Finally, we study the results of the experiments in Section~\ref{experiments_results}.
+
 \section{Data pre-processing}\label{experiments_preProcessing}
-First we motivate the choice of the features on which we have based the comparison between movies.
+First we motivate the choice of the features on which we have based the comparison between movies. We then describe how we have transformed the data into vectors.
 \subsection{Chosen movie features}
 We have chosen to focus only on some of the features available for each movie. Specifically we have considered the following attributes, grouped according to the categories provided by the dataset:
 \begin{itemize}
@@ -31,16 +32,15 @@ We have chosen to focus only on some of the features available for each movie. S
 \end{itemize}
 
 The rational behind the exclusion of the other attributes is based on the aspects that a user would consider when choosing a movie. For example, we believe that the six main actors, ordered by importance in the dataset, are sufficient to also include possible cameos that could push someone to watch a movie. Also, a generic viewer could be interested in who directed the movie, but less in the writer of the screenplay, or other crew members. These aspects could be added for a more interested audience. We have chosen to remove the tagline and the description of the movies since they are possibly unique or very dissimilar for every movie. Also, this would have involved a more extensive natural language processing step. The other features provided (the country of the movie's production company, its languages, its the posters, the information about the movie's releases and the studios where it was made) are strongly related to the production and release aspects, so not of particular interest to the user. If the evaluation of similar items where to be integrated in a recommendation system it would be fitting to check if the user knows a language in which a suggested movie is produced.
-\section{Chosen parameters}\label{experiments_parameters}
-\section{Results}\label{experiments_results}
 
 \subsection{Data point embedding}
-To preserve the independent role of each attribute we have decided to measure their similarity using cosine distance. This entails translating all data regarding a movie into a vector with components in $\mathbb{R}$. It is evident that the textual attributes have to be transformed into values to be able to work in an Euclidean space. The following paragraphs are dedicated to these transformations.
+To preserve the independent role of each attribute we have decided to measure their similarity using cosine distance. This entails translating all data regarding a movie into a vector with components in $\mathbb{R}$. It is evident that the textual attributes have to be transformed into values to be able to work in an Euclidean space. Since the vectors resulting from the embedding step must have same dimension, we have merged attributes having multiple values (multiple directors, themes and genres) by averaging their respective text encodings.
+The following paragraphs are dedicated to these transformations.
 
 \subsubsection{Text encoding - name, genres, themes}
 We have processed the values for the attributes name, genres and themes similarly. In fact we desired to embed these features as to preserve the similarity of the relative text. For movies, for example, we would like sequels to be close by in the embedding space. We also would like to account for genres registered in the dataset in slightly different ways (e.g. science-fiction and Science Fiction), but bring the same meaning in terms of genre. For the themes we also want to preserve the distance in meaning between them, based on the principal words used to define them.
 
-To do this we have relied on the static vectors provided by SpaCy\cite{Montani2023SpaCy}. We have used the medium-sized English model, which is trained on web data\footnote{Details at \url{https://spacy.io/models/en\#en_core_web_md}}. We have then averaged the vectors of the words in the text to obtain a single vector for the text.
+To do this we have relied on the static vectors provided by SpaCy\cite{Montani2023SpaCy}, which have 300 components. We have used the medium-sized English model, which is trained on web data\footnote{Details at \url{https://spacy.io/models/en\#en_core_web_md}}. We have then averaged the vectors of the words in the text to obtain a single vector for the text.
 
 Since the theme attribute values are sentence-like, we have also removed the stop words in the text and transformed all the remaining tokens into their relative lemmas. For both these processing steps we have used the operations provided by SpaCy. This additional simplifications of the themes' texts is useful to focus on the meaning of a given theme, instead of relying also on the formulation of the sentence.
 
@@ -48,3 +48,80 @@ Since the theme attribute values are sentence-like, we have also removed the sto
 We proceeded differently for actors and directors' names. In this case we have applied a hash function to the textual values to not add a bias towards similar names. It would not make sense that a movie directed by the child of a famous director would be considered similar to one of their works (e.g. Sofia Coppola is stylistically miles away from her father Francis Ford Coppola). The same goes, for example, for homonyms in the actors' names.
 
 We have used the hashing function \textit{shake\_256} implemented by the Python library \texttt{hashlib}\footnote{Documentation found at~\url{https://docs.python.org/3/library/hashlib.html\#hashlib.shake\_256}}, that we have preferred over the other functions offered by the library since it provides variable length digests. This feature will 
+
+\subsection{Dimensionality reduction}
+Following the steps described above we end up with a vector of size $910$ for each movie. If we were to evaluate the similarity of the movies using these representation we would incur in the so called ``curse of dimensionality" problem. 
+
+\subsubsection{Standardization}
+To avoid different features having different weight in the reduction process we have standardized the data. Namely, for each feature we have applied the following operation:
+\begin{equation}
+    {x^f_{\text{std}}}_i=\frac{x^f_i-\mu}{\sigma}
+\end{equation}
+where $x^f_i$ is the value for the $i$-th item of the feature $f$, $\mu$ is the mean of the $f$ and $\sigma$ is the standard deviation of $f$.
+
+\subsubsection{Principal-Component Analysis (PCA)}
+We have then applied Principal Component Analysis (PCA)~\cite{Pearson1901lines} to reduce the dimensionality of the data. This approach identifies the directions along which data points in a high-dimensional space are most spread out. The principal eigenvector of the covariance matrix of the dataset\footnote{Given a dataset expressed as a matrix $X$ where each of the $n$ rows represents a data point and each column corresponds to a variable, it's covariance matrix is defined as $\frac{1}{n-1}X^{T}X$. So, the covariance matrix of a dataset captures the relationships between variables.} represents the axis of maximum variance. Subsequent eigenvectors (axes) capture the highest variance orthogonally. This technique reduces dimensionality by projecting the original data onto the most significant components, providing a lower-dimensional approximation that summarizes the data efficiently.
+During the experiments we have chosen to keep the number of components that explain the desired percentage of the variance in the data. We choose the first $k$ principal components such that
+\begin{equation}
+    k = \arg\min_{k}{\text{CEV}_k \geq t}
+\end{equation}
+where $t$ is the chosen threshold for the explained variance and $CEV_k$ is the cumulative explained variance for the first $k$ components and is defined as
+
+\begin{equation}
+    \text{CEV}_k = \frac{\sum_{i=1}^{k} \lambda_i}{\sum_{i=1}^{n} \lambda_i}
+\end{equation}
+where $\lambda_i$ is the $i$-th eigenvalue of the covariance matrix.
+
+\section{Experiment definition}\label{experiments_definition}
+In this section, we outline the parameters available for conducting the experiments. We then describe the steps involved in each experiment, divided into two phases: pre-processing and identifying similar movies.
+
+\subsection{Parameters}\label{experiments_parameters}
+The parameters to be chosen to run an experiment are the following:
+\begin{description}
+    \item \textbf{Data pre-processing}
+    \begin{itemize}
+        \item $t_\text{PCA}$: percentage of the variance in the data that we want to explain with the principal components.
+    \end{itemize}
+    \item \textbf{Finding similar movies}
+    \begin{itemize}
+        \item $l$: signature length
+        \item $t$: threshold on the similarity between movies
+        \item $b$: number of bands
+        \item $r$: number of rows in a band (can be derived from $l$ and $b$)
+        \item $h$: hash bucket size for each band
+    \end{itemize}
+\end{description}
+
+\subsection{Steps}\label{experiments_steps}
+For simplicity we refer to a schematic explanation of an experiment in the Algorithm~\ref{alg:experiment}.
+\begin{algorithm}
+    \label{alg:experiment}
+    \caption{Experiment structure}
+    \begin{algorithmic}        
+    \Function{Data pre-processing}{data, $t_\text{PCA}$}
+        \State Polish the data
+        \State Data embedding
+        \State Standardize the vectors
+        \State Apply PCA to the data, keeping $k_t$ components
+    \EndFunction
+    \Statex
+    \Function{Find similar items}{data, $l,t,b,r,h$}
+        \State Create $l$ random hyperplanes
+        \State Build the signature matrix $S\in\{-1,1\}^{l\times n}$
+        \State Divide the signature matrix into $b$ bands fo $r$ rows each
+        \State Hash the bands in the range $[0,h-1]$
+        \State Filter candidate pairs
+    \EndFunction
+    \Statex
+    \Input
+        \Statex data: set of $n$ data points
+        \Statex $t_\text{PCA},l,t,b,r,h$: parameters
+    \EndInput
+    \Statex
+    \State \Call{Data pre-processing}{data, $t_\text{PCA}$}
+    \State result $\gets$ \Call{Find similar items}{data, $l,t,b,r,h$}
+    \Statex
+    \Output { result}
+    \EndOutput
+    \end{algorithmic}
+\end{algorithm}
