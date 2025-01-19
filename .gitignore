@@ -12,6 +12,7 @@
 *.brf
 *.cb
 *.cb2
+*.csv
 *.idx
 *.ilg
 *.ind
