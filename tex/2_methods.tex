@@ -2,7 +2,7 @@
 It would be unthinkable to compare all possible pairs of items in the dataset to find similar ones, so we would like to focus only on pairs that are likely to be similar. In Section~\ref{cosineSimilarity} we define the distance measure we have chosen to evaluate the similarity between movies in the dataset. Then we introduce Locality-Sensitive Hashing (LSH) in Section~\ref{LSH}, a general theory to refine the choice of similar items to evaluate.
 
 \section{Cosine similarity}\label{cosineSimilarity}
-The cosine distance is a measure of similarity is used in spaces that have multiple dimensions, such as Euclidean spaces. In such a space points may be seen as directions from the origin towards the points. The cosine distance between two points is the angle that the vectors to those points make. The degree of this angle will be in the range $[0,180]$, regardless of the number of dimensions the space has. The cosine distance between two points can be determined by computing the cosine of the angle between the vectors representing the points (Definition~\ref{def:cosine}), and then applying the $\arccos$ function to translate to an angle in the  $[0,180]$ range.
+The cosine distance is a measure of similarity is used in spaces that have multiple dimensions, such as Euclidean spaces. In such a space points may be seen as directions from the origin towards the points. The cosine distance between two points is the angle that the vectors to those points make. The degree of this angle will be in the range $[0,\pi]$, regardless of the number of dimensions the space has. The cosine distance between two points can be determined by computing the cosine of the angle $\theta$ between the vectors $x$ and $y$ representing the points (Definition~\ref{def:cosine}), and then applying the $\arccos$ function to translate the result into an angle in the $[0,\pi]$ range.
  
 \begin{definition}[cosine]\label{def:cosine}
     Given two vectors $x$ and $y$ in a space, the cosine of the angle between them is defined as
@@ -22,7 +22,7 @@ We then define the cosine similarity as how far a given angle (represented by it
 
 
 \section{Locality-Sensitive Hashing (LSH)}\label{LSH}
-Locality-Sensitive Hashing (LSH) is a technique used to find similar items in a dataset, first introduced in~\cite{Indyk1998approximatendyk1998approximate}\cite{Gionis1999similarity}.
+Locality-Sensitive Hashing (LSH) is a technique used to find similar items in a dataset, first introduced in~\cite{Indyk1998approximate}\cite{Gionis1999similarity}.
 Generally LSH entails hashing items several times, so that similar items are more likely to be hashed to the same bucket than dissimilar items are. We then consider any pair that hashed to the same bucket for any of the hashings to be a \term{candidate pair}. This technique can result in false positives and false negatives in the following cases:
 \begin{description}
     \item[false negatives] when pairs of truly similar items do not hash to the same bucket for any of the hashings,
@@ -101,7 +101,64 @@ Having the representation of the items obtained though LSH, the candidate pairs 
     \item [\boldmath{$(\frac{1}{b})^\frac{1}{r}>s^*$}] to limit false positives.
 \end{description}
 
-\subsection{Locality Sensitive family for cosine similarity}\label{LSfamily}
-~\cite{Charikar2002similarity}
-% contribution of each feature to PCA
-% compare to UMAP results
+\section{Locality-Sensitive functions}\label{LSfamily}
+To generate candidate pairs of items effectively and efficiently we need a specific \term{family} of hash functions, called locality-sensitive functions. These functions in these families must satisfy the following conditions:
+\begin{itemize}
+    \item they must be more likely to make close pairs be candidate pairs that distant pairs,,
+    \item they must be statistically independent, such that it is possible to estimate the probability of the responses of two or more functions by using the product rule for independent events,
+    \item they must be efficient, in the following ways:
+    \begin{itemize}
+        \item they must be able to identify candidate pairs in time much less that hte rime it takes to look at all pairs (quadratic time in the number of items),
+        \item they must be combinable to build functions that are better at avoiding false positives and false negatives. Also these aggregate functions must take less time than looking at all pairs.
+    \end{itemize}
+\end{itemize}
+
+Seen these characteristics it makes sense to also refer to the locality-sensitive functions in family $\mathbf{F}$ as hash functions. 
+
+
+Given our application of Locality-Sensitive functions, we limit our discussion to functions that take two items and render a decision about whether these items should be a candidate pair. from here on  the notation $f(x)=f(y)$ stands for ``make $x$ and $y$ a candidate pair'', and conversely by $f(x)\neq f(y)$ we mean ``do not make $x$ and $y$ a candidate pair unless some other function concludes otherwise''. By \term{family} we indicate a collection of functions of such form, specifically we define the sensitivity of a family of functions as follows.
+\begin{definition}($(d_1, d_2, p_1, p_2)$-sensitive family of functions)
+    Let $d_1<d_2$ be two distances according to dome distance measure $d$. A family $mathbf{F}$ of functions is said to be $(d_1, d_2, p_1, p_2)$-sensitive if fo every $f\in\mathbf{F}$ and for every pair of items $x$ and $y$:
+    \begin{itemize}
+        \item if $d(x,y)\leq d_1$ then $\mathbb{P}(f(x)=f(y))\geq p_1$,
+        \item if $d(x,y)\geq d_2$ then $\mathbb{P}(f(x)=f(y))\leq p_2$.
+    \end{itemize}
+\end{definition}
+
+In general there is no guarantee that a distance measure has a locality-sensitive family of functions. Such families can be constructed for example for Jaccard distance, Hamming distance and Euclidean distance. In the following section we show how to build a locality-sensitive family for the cosine similarity.
+
+\subsection{Locality-Sensitive family for cosine similarity}\label{LSfamily_cosine}
+We recall from Section~\ref{cosineSimilarity} that the cosine distance between two vectors $x$ and $y$ is defined as the angle $\theta$ between them. This angle is measured on the plane defined by the vectors, regardless of the dimensions of the space they are in. We now consider a hyperplane that passes through the vertex of $\theta$. Looking at Figure~\ref{fig:angleHyperplane} we observe that the hyperplane can be positioned like hyperplane $a$ or $b$.
+\begin{figure}
+    \centering
+    \begin{tikzpicture}
+        \draw[->] (0,0) -- (3,1) node[anchor=west] {$x$};
+        \draw[->] (0,0) -- (2,-2) node[anchor=north] {$y$};
+
+        \draw[dashed] (3,0.5) -- (-3,-0.5) node[anchor=north] {$a$};
+        \draw[->, dotted, gray] (0,0) -- (0.25,-1.5) node[anchor=west] {$v_a$};
+        \draw[->, dotted, gray] (0,0) -- (-0.25,1.5) node[anchor=east] {$v_a$};
+
+        \draw[dashed] (-0.5,-2.5) -- (0.5,2.5) node[anchor=east] {$b$};
+        \draw[->, dotted, gray] (0,0) -- (-1.75, 0.25) node[anchor=south] {$v_b$};
+        \draw[->, dotted, gray] (0,0) -- (1.75, -0.25) node[anchor=north] {$v_b$};
+        \draw (0.6,0.2) arc[start angle=0, end angle=-52, radius=0.7];
+        \node at (0.8,-0.3) {$\theta$};
+    \end{tikzpicture}
+    \caption{Two vectors making an angle $\theta$ seen from above}\
+    \label{fig:angleHyperplane}
+\end{figure}
+
+We continue our considerations by referencing the normal vector $v$ of the hyperplane, such that the dot product of $v$ with all and only the set of points in the hyperplane is $0$. For the example in Figure~\ref{fig:angleHyperplane} the normal vectors of hyperplanes $a$ and $b$ are respectively $v_a$ and $v_b$.
+
+In the case of hyperplane $a$ where $x$ and $y$ are on opposite sides, the signs of $v_a$ and $x$, and $v_a$ and $y$ are opposite, irrespective of whether $v_a$ extends above or below the projection of hyperplane $a$ (as shown in Figure~\ref{fig:angleHyperplane}). As a consequence the dot products $v_a\cdot x$ and $v_a\cdot y$ are both negative. Vice versa the dot products $v_b\cdot x$ and $v_b\cdot y$ are both positive, regardless of the position $v_b$ (see Figure~\ref{fig:angleHyperplane}).
+
+The probability that a randomly chosen hyperplane (or its normal vector) looks like $a$ is $\frac{\theta}{\pi}$. In all other cases the hyperplane is positioned like $b$.
+
+So, we build the locality sensitive family $\mathbf{F}$ as a set of randomly chosen vectors $\{v_{f\in\mathbf{F}}\}$. Given two vectors $x$ and $y$, they make a candidate pair of similar items if and only if the dot products $x\cdot v_f$ and $x \cdot v_f$ have the same sign. $\mathbf{F}$ is then a $(d_1, d_2, \pi-d_1, \pi-d_2)$-sensitive family of hash functions.
+
+\subsubsection{Choice of random vectors}
+To build the locality-sensitive family $\mathbf{F}$, instead of choosing any random vectors, it is sufficient to consider vectors $f\in \mathbf{F}$ with components in $\{-1,1\}$. This sensibly simplifies the computation of dot products $f\cdot x$, that are simply the algebraic sum of the components of $v$ with their sign depending on the corresponding components of $x$.
+% 
+% % contribution of each feature to PCA
+% % compare to UMAP results
