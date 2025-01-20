@@ -3,13 +3,16 @@ The aim of this project is to detect pairs of similar items from the Kaggle [Let
 In particular we will:
 * pre-process the data,
 * implement techniques to detect pairs of similar items according to the cosine similarity measure,
-* analyze the results, possibly by comparing them with library versions of the implemented algorithms.
+* analyze the results, possibly by comparing them with a baseline.
 
 ## Contents
 This repository contains two main files:
 * `findingSimilarItems.ipynb` the Jupyter Notebook with all the adopted code described as necessary, runnable in the linked Google Colab environment,
 * `report.tex` the $\LaTeX$ source code for the report of the project; this document goes into more detail about the methods used and the results.
 For the rendering of the report in pdf format, refer to [release](https://github.com/LuciaMellini/AMD_project).
+
+### Additional contents
+* `evaluation_data/prepare_evaluation_data.py` the script used to fetch all the data from [TMDB](https://www.themoviedb.org/) used to evalute the results.
 
 ## Prerequisites
 To be able to download the dataset it is necessary to authenticate with a Kaggle username and token<sup>[1](#fn1)</sup>. At this scope the first code block in the notebook `project.ipynb` is intended to be filled out with your personal username and key in the respective fields, like suggested below.
