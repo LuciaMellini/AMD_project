@@ -95,7 +95,7 @@ The parameters that have to be chosen to run an experiment are the following:
 \end{description}
 
 \subsection{Steps}\label{experiments_steps}
-For simplicity we refer to a schematic explanation of an experiment in Algorithm~\ref{alg:experiment}.
+For simplicity we refer to a schematic explanation of an experiment in Algorithm~\ref{alg:experiment}. We assume that the data given as input to the experiment has already been loaded properly and has been polished. We consider these aspects inherent to the dataset format, not to the experiment itself.
 
 \begin{algorithm}
     \caption{Experiment structure}
@@ -108,7 +108,6 @@ For simplicity we refer to a schematic explanation of an experiment in Algorithm
     
     \SetKwProg{Fn}{Function}{:}{}
     \Fn{\Preprocess{data, $t_\text{PCA}$}}{
-        Polish the data\;       \label{line:polish}
         Data embedding\;
         Standardize the vectors\;
         Apply PCA to the data, keeping $k_{t_\text{PCA}}$ components\;
@@ -127,6 +126,8 @@ For simplicity we refer to a schematic explanation of an experiment in Algorithm
     
     \SetAlgoLined
     \KwIn{data: set of $n$ data points, $t_\text{PCA}, l, t, b, r, h$}
+    //Load the data\;
+    //Polish the data\;       \label{line:polish}
     data $\gets$ \Preprocess{data, $t_\text{PCA}$}\;
     result $\gets$ \FindSimilar{data, $l,t,b,r,h$}\;
     \KwOut{result}
@@ -134,7 +135,7 @@ For simplicity we refer to a schematic explanation of an experiment in Algorithm
 \end{algorithm}
 
 \section{Data organization}\label{experiments_dataOrganization}
-The experiments described in the previous section have been implemented using objects of type \textit{Resilient Distributed Dataset (RDD)}, provided by Apache Spark\footnote{Documentation at \url{https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.RDD.html}}. We list the pairs of key, values that we have used to represent the data in the RDDs:
+The experiments described in the previous section have been implemented using objects of type \textit{Resilient Distributed Dataset (RDD)}, provided by Apache Spark\footnote{Documentation at \url{https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.RDD.html}}. We list the pairs of key, value pairs that we have used to represent the data in the RDDs. To motivate the RDD structure appearing during data embedding we included how we have loaded the dataset and polished it.
 \begin{description}
     \item [Data loading] The files in csv format provided by the dataset have been loaded into an RDD for each csv file (\term{member}), namely actors, crew, genres, movies and themes. Each RDD \texttt{letterboxd\_RDD[member]} contains tuples in the following structure.
         $$\begin{array}{c}
@@ -168,6 +169,7 @@ The experiments described in the previous section have been implemented using ob
             (id_1, [d_2[k_a], d_2[k_b], \dots, d_2[k_{k_{t_\text{PCA}}}]])\\
             \cdots
         \end{array}$$
+
     \item [Building the signature matrix] The structure of the RDD \texttt{signature\_matrix\_RDD} is the following.
         $$\begin{array}{c}
             (id_1, [s_{11}, s_{12}, \dots, s_{1l}])\\
@@ -181,8 +183,6 @@ The experiments described in the previous section have been implemented using ob
             (id_1, [[s_{11}^{(1)}, s_{12}^{(1)}, \dots, s_{1r}^{(1)}], \dots, [s_{2(q-2)}^{(b)},s_{2(q-1)}^{(b)},\dots,s_{1q}^{(b)}]])\\
             (id_2, [[s_{21}^{(1)}, s_{22}^{(1)}, \dots, s_{2r}^{(1)}], \dots, [s_{2(q-2)}^{(b)},s_{2(q-1)}^{(b)},\dots,s_{1q}^{(b)}]])\\
             \cdots       
-
-
         \end{array}$$
     After applying the hash function to the bands, the resulting RDD \texttt{hashed\_signatures\_RDD} will have values that are lists of integers in the range $[0,h-1]$ of length $b$.
 
@@ -208,8 +208,79 @@ The experiments described in the previous section have been implemented using ob
 
 \end{description}
 
-
 \section{Computational cost}\label{experiments_cost}
 Taking in account that we have based out implementation on RDDs, we evaluate the computation cost of an experiment in terms of the \term{communication costs} of each task. So, the efficiency of the implementation depends on the sum os the communication cost of all the tasks. By task we mean any transformation applied to an RDD, and it's communication cost is measured as the size of the input to the task. We will be using the number of tuples to measure such size. We focus on the time necessary to move tuples between nodes in the computing cluster seen that each task tends to be simple, or at least linear in the size of the values.
-Following the steps of th experiment we outline the communication cost for each task, given $n$ the amount of movies in the dataset.
+Following the steps of the experiment we outline the communication cost for each task, given $n$ the amount of movies in the dataset. We also include efficiency measures for the data loading and polishing steps.
 
+\begin{table}
+    \centering
+    \begin{tabularx}{\linewidth}{rcl}
+        \toprule
+        \textbf{Operation} & \textbf{Task} & \textbf{Comm. Cost}\\
+        \midrule
+        \\
+        \multicolumn{3}{c}{\textit{Data loading}} \\
+        \cmidrule(lr){1-3} 
+        csv to RDD  & map & $\leq n\cdot k_\text{members}$ \\
+        get and remove column names & filter \& map & $n$ \\
+        associate each value with its attribute & map & $n$ \\[4pt]
+
+        \multicolumn{3}{c}{\textit{Data polishing}} \\
+        \cmidrule(lr){1-3} 
+        polish \textit{crews} member & filter \& map & $\leq n\cdot k_\text{crew}$ \\
+        list multiple values for an attribute & reduceByKey & $\leq n\cdot k_{members}$ \\
+        polish \textit{actors} member & map & $\leq n\cdot k_\text{actor}$ \\
+        collect all movie features & union \& reduceByKey & $\leq n\cdot k_\text{members}$ \\[4pt]
+
+        \multicolumn{3}{c}{\textit{Data embedding}} \\
+        \cmidrule(lr){1-3} 
+        natural language processing for \textit{themes} & map & $n$ \\
+        spaCy word vectorization for \textit{titles}, \textit{genres} and \textit{themes} & map & $n$ \\
+        string hashing for \textit{actors} and \textit{directors} & map & $n$ \\
+        average list values & map & $n$ \\
+        dictionary to array of values  & map & $n$ \\[4pt]
+        
+        \multicolumn{3}{c}{\textit{Data standardization}} \\
+        \cmidrule(lr){1-3} 
+        sum and count per list index & flatMap & $n$ \\
+        get sample mean per list index & map & $n\cdot p$ \\
+        sum fof square differences and count per list index & flatMap & $n$ \\
+        get standard sample deviation per list index & map & $n\cdot p$ \\
+        standardize vectors & map & $n$ \\[4pt]
+        
+        \multicolumn{3}{c}{\textit{Dimension reduction}} \\
+        \cmidrule(lr){1-3} 
+        apply PCA & map \& reduce & $n$ \\
+        reduce vectors to $k_{t_\text{PCA}}$ components & map & $n$ \\[4pt]
+
+        \multicolumn{3}{c}{\textit{Building the signature matrix}} \\
+        \cmidrule(lr){1-3} 
+        create locality sensitive family & map & $l$ \\
+        associate vectors to all hash functions & cartesian & $n+l$ \\
+        compute signs of dot products & map & $n\cdot l$ \\
+        build signatures & groupByKey & $n \cdot l$ \\ [4pt]
+
+        \multicolumn{3}{c}{\textit{Banding the signature matrix}} \\
+        \cmidrule(lr){1-3}
+        band the signatures & map & $n$ \\
+        banding the signatures & map & $n$ \\[4pt]
+        
+        \multicolumn{3}{c}{\textit{Finding the candidate pairs}} \\
+        \cmidrule(lr){1-3} 
+        separate all signature values by band & flatMap & $n$ \\
+        collect all bands with same value & groupByKey & $n\cdot b$ \\
+        get all bands with multiple common values & filter & $n\cdot b$ \\
+        get candidate pairs & flatMap & $<c$ \\[4pt]
+        
+        \multicolumn{3}{c}{\textit{Filtering similar items}} \\
+        \cmidrule(lr){1-3}  
+        associate candidate pairs to original vectors & LeftOuterJoin \& map & $c$ \\
+        fetch similar items & filter & $c$ \\[4pt]
+        \bottomrule
+    \end{tabularx}
+    \caption{Communication cost for each task}\label{tab:parametriInput}
+\end{table}
+
+% Where $k_\text{actors}$, $k_\text{crew}$, $k_\text{genres}$, $k_\text{movies}$ and $k_\text{themes}$ are the maximum numbers of tuples for each movie in the respective dataset members. For simplicity we define $k_\text{members} = k_\text{actors} + k_\text{crew} + k_\text{genres} + k_\text{movies} + k_\text{themes}$.
+% $p$ is the amount of components of the vector after data embedding and before standardization, in our experimnets $p=910$.
+% $c<<n$ number of candidate pairs
