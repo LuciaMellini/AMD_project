@@ -16,14 +16,15 @@ We then define the cosine similarity as how far a given angle (represented by it
 \begin{definition}[cosine similarity]\label{def:cosineSimilarity}
     Given two vectors $x$ and $y$ in a space, their cosine similarity is defined as
     \begin{equation}
-        \text{SIM}(x,y)=\frac{180-\arccos\left(\cos(x,y)\right)}{180}
+        \text{SIM}(x,y)=1-\frac{\arccos\left(\cos(x,y)\right)}{\pi}
     \end{equation}
 \end{definition}
 
 
 \section{Locality-Sensitive Hashing (LSH)}\label{LSH}
 Locality-Sensitive Hashing (LSH) is a technique used to find similar items in a dataset, first introduced in~\cite{Indyk1998approximate}\cite{Gionis1999similarity}.
-Generally LSH entails hashing items several times, so that similar items are more likely to be hashed to the same bucket than dissimilar items are. We then consider any pair that hashed to the same bucket for any of the hashings to be a \term{candidate pair}. This technique can result in false positives and false negatives in the following cases:
+Generally LSH entails hashing items several times, so that similar items are more likely to be hashed to the same bucket than dissimilar items are. We then take a \term{candidate pair} any pair that hashes to the same bucket at least once.
+This technique can result in false positives and false negatives in the following cases:
 \begin{description}
     \item[false negatives] when pairs of truly similar items do not hash to the same bucket for any of the hashings,
     \item[false positives] when pairs of dissimilar items hash to the same bucket for any of the hashings, that will be considered as candidate pairs. 
@@ -102,23 +103,24 @@ Having the representation of the items obtained though LSH, the candidate pairs 
 \end{description}
 
 \section{Locality-Sensitive functions}\label{LSfamily}
-To generate candidate pairs of items effectively and efficiently we need a specific \term{family} of hash functions, called locality-sensitive functions. These functions in these families must satisfy the following conditions:
+To generate candidate pairs of items effectively and efficiently we need a specific \term{family} of hash functions, called locality-sensitive functions. Given our application, we limit our discussion to functions that take two items and render a decision about whether these items should be a candidate pair. From here on the notation $f(x)=f(y)$ stands for ``make $x$ and $y$ a candidate pair'', and conversely by $f(x)\neq f(y)$ we mean ``do not make $x$ and $y$ a candidate pair unless some other function concludes otherwise''. The functions in these families must satisfy the following conditions:
 \begin{itemize}
-    \item they must be more likely to make close pairs be candidate pairs that distant pairs,,
-    \item they must be statistically independent, such that it is possible to estimate the probability of the responses of two or more functions by using the product rule for independent events,
-    \item they must be efficient, in the following ways:
+    \item They must be more likely to make close pairs be candidate pairs that distant pairs. Formally speaking, given $h$ a hash function in the family and two elements $x$, $y$ in a collection of objects $X$, the following is satisfied:
+    $$\mathbb{P}(h(x)=h(y))=\text{SIM}(x,y)$$
+    where $\text{SIM}: X^2 \to [0,1]$ is a similarity function.
+    \item They must be statistically independent, such that it is possible to estimate the probability of the responses of two or more functions by using the product rule for independent events.
+    \item They must be efficient, in the following ways:
     \begin{itemize}
         \item they must be able to identify candidate pairs in time much less that hte rime it takes to look at all pairs (quadratic time in the number of items),
         \item they must be combinable to build functions that are better at avoiding false positives and false negatives. Also these aggregate functions must take less time than looking at all pairs.
     \end{itemize}
 \end{itemize}
 
-Seen these characteristics it makes sense to also refer to the locality-sensitive functions in family $\mathbf{F}$ as hash functions. 
+Seen these characteristics we also refer to the locality-sensitive functions in family $\mathcal{F}$ as hash functions. 
 
-
-Given our application of Locality-Sensitive functions, we limit our discussion to functions that take two items and render a decision about whether these items should be a candidate pair. from here on  the notation $f(x)=f(y)$ stands for ``make $x$ and $y$ a candidate pair'', and conversely by $f(x)\neq f(y)$ we mean ``do not make $x$ and $y$ a candidate pair unless some other function concludes otherwise''. By \term{family} we indicate a collection of functions of such form, specifically we define the sensitivity of a family of functions as follows.
+We can characterize a locality-sensitive family based on it's sensitivity, as defined below.
 \begin{definition}($(d_1, d_2, p_1, p_2)$-sensitive family of functions)
-    Let $d_1<d_2$ be two distances according to dome distance measure $d$. A family $mathbf{F}$ of functions is said to be $(d_1, d_2, p_1, p_2)$-sensitive if fo every $f\in\mathbf{F}$ and for every pair of items $x$ and $y$:
+    Let $d_1<d_2$ be two distances according to dome distance measure $d$. A family $\mathcal{F}$ of functions is said to be $(d_1, d_2, p_1, p_2)$-sensitive if fo every $f\in\mathcal{F}$ and for every pair of items $x$ and $y$:
     \begin{itemize}
         \item if $d(x,y)\leq d_1$ then $\mathbb{P}(f(x)=f(y))\geq p_1$,
         \item if $d(x,y)\geq d_2$ then $\mathbb{P}(f(x)=f(y))\leq p_2$.
@@ -155,10 +157,24 @@ In the case of hyperplane $a$ where $x$ and $y$ are on opposite sides, the signs
 
 The probability that a randomly chosen hyperplane (or its normal vector) looks like $a$ is $\frac{\theta}{\pi}$. In all other cases the hyperplane is positioned like $b$.
 
-So, we build the locality sensitive family $\mathbf{F}$ as a set of randomly chosen vectors $\{v_{f\in\mathbf{F}}\}$. Given two vectors $x$ and $y$, they make a candidate pair of similar items if and only if the dot products $x\cdot v_f$ and $x \cdot v_f$ have the same sign. $\mathbf{F}$ is then a $(d_1, d_2, \pi-d_1, \pi-d_2)$-sensitive family of hash functions.
+So, we build the locality sensitive family $\mathcal{F}$ as a set of randomly chosen vectors $\{v_{f\in\mathcal{F}}\}$. Given two vectors $x$ and $y$, they make a candidate pair of similar items if and only if the dot products $x\cdot v_f$ and $x \cdot v_f$ have the same sign. $\mathcal{F}$ is then a $(d_1, d_2, \pi-d_1, \pi-d_2)$-sensitive family of hash functions.
+
+We can show that these functions indeed form a locality-sensitive family for cosine distance by proving Lemma 3.2 in~\cite{Goesman1995ImprovedApproximationMAXCUT}.
+
+\begin{lemma}
+    Let $u$ and $v$ be two vectors in $\mathbb{R}^d$ and $\mathcal{F} $ a locality-sensitive family for cosine distance. Then
+    $$\mathbb{P}_{h\in\mathcal{F}}(h(u)=h(v))=\mathbb{P}_{h\in\mathcal{F}}(\text{sgn}(u\cdot r)=\text{sgn}(v\cdot r))=1-\frac{\theta(u,v)}{\pi}$$    
+    where $\theta(u,v)$ is the angle between the vectors $u$ and $v$, and $r$ is a random hyperplane.
+    \begin{proof}
+        The statement entails that the probability of the random hyperplane separating the two vectors is directly proportional to the angle between the vectors. Looking at the complementary event, we have that
+        $$\mathbb{P}_{h\in\mathcal{F}}(\text{sgn}(u\cdot r)\neq\text{sgn}(v\cdot r)) = 2\cdot \mathbb{P}(u\cdot r \geq 0 \land v\cdot r <0)$$.
+        The set of vectors $\{r\mid u\cdot r \geq 0 \land v\cdot r<0\}$ corresponds to the intersection of two half-spaces whose diheral angle is $\theta(u,v)$. (For reference look at hyperplane $b$ w.r.t vectors $x$ and $y$ in Figure~\ref{fig:angleHyperplane}). The sphere digon intersected by the two hyperplanes has angle $\theta(u,v)$, in other words $\frac{\theta(u,v)}{2\pi}$ times the measure of the full sphere. It follows that $\mathbb{P}_{h\in\mathcal{F}}(\text{sgn}(u\cdot r)\neq\text{sgn}(v\cdot r))=\frac{\theta(u,v)}{2\pi}$, and the Lemma is so proven.
+    \end{proof}
+\end{lemma}
+The function $1-\frac{\theta}{\pi}$ is strictly related to $\cos(\theta)$ given that the former is always within a factor $0.878$ from the latter. In addition, $\cos(\theta)$ can be estimated from the estimate of $\theta$ (refer to Theorem 3.3 in~\cite{Goesman1995ImprovedApproximationMAXCUT}). Also, the probability of two hash functions colliding is exactly equal to the cosine similarity, defined in Definition~\ref{def:cosineSimilarity}.
 
 \subsubsection{Choice of random vectors}
-To build the locality-sensitive family $\mathbf{F}$, instead of choosing any random vectors, it is sufficient to consider vectors $f\in \mathbf{F}$ with components in $\{-1,1\}$. This sensibly simplifies the computation of dot products $f\cdot x$, that are simply the algebraic sum of the components of $v$ with their sign depending on the corresponding components of $x$.
+To build the locality-sensitive family $\mathcal{F}$, instead of choosing any random vectors, it is sufficient to consider vectors $f\in \mathcal{F}$ with components in $\{-1,1\}$. This sensibly simplifies the computation of dot products $f\cdot x$, that are simply the algebraic sum of the components of $v$ with their sign depending on the corresponding components of $x$.
 % 
 % % contribution of each feature to PCA
 % % compare to UMAP results
