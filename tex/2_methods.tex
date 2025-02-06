@@ -1,57 +1,55 @@
 \chapter{Methods} \label{methods}
-It would be unthinkable to compare all possible pairs of items in the dataset to find similar ones, so we would like to focus only on pairs that are likely to be similar. In Section~\ref{cosineSimilarity} we define the distance measure we have chosen to evaluate the similarity between movies in the dataset. Then we introduce Locality-Sensitive Hashing (LSH) in Section~\ref{LSH}, a general theory to refine the choice of similar items to evaluate.
-
-\section{Cosine similarity}\label{cosineSimilarity}
-The cosine distance is a measure of similarity is used in spaces that have multiple dimensions, such as Euclidean spaces. In such a space points may be seen as directions from the origin towards the points. The cosine distance between two points is the angle that the vectors to those points make. The degree of this angle will be in the range $[0,\pi]$, regardless of the number of dimensions the space has. The cosine distance between two points can be determined by computing the cosine of the angle $\theta$ between the vectors $x$ and $y$ representing the points (Definition~\ref{def:cosine}), and then applying the $\arccos$ function to translate the result into an angle in the $[0,\pi]$ range.
- 
-\begin{definition}[cosine]\label{def:cosine}
-    Given two vectors $x$ and $y$ in a space, the cosine of the angle between them is defined as
-    \begin{equation}
-        \cos(x,y)=\frac{x\cdot y}{\|x\|\|y\|}
-    \end{equation}
-\end{definition}
-
-We then define the cosine similarity as how far a given angle (represented by its cosine) is from 180 degrees, expressed as a fraction of a semicircle (Definition~\ref{def:cosineSimilarity}).
-
-\begin{definition}[cosine similarity]\label{def:cosineSimilarity}
-    Given two vectors $x$ and $y$ in a space, their cosine similarity is defined as
-    \begin{equation}
-        \text{SIM}(x,y)=1-\frac{\arccos\left(\cos(x,y)\right)}{\pi}
-    \end{equation}
-\end{definition}
-
+To find similar items in a dataset it would be unthinkable to compare all possible pairs, so we would like to focus only on pairs that are likely to be similar. We introduce Locality-Sensitive Hashing (LSH), a general method to refine the choice of similar items to evaluate (Section~\ref{LSH}). Specifically in Section~\ref{LSfamily} we formalize the theory underlying the LSH technique. Furthermore and we show how it can apply to cosine distance (Section~\ref{LSfamily:cosine}).
 
 \section{Locality-Sensitive Hashing (LSH)}\label{LSH}
 Locality-Sensitive Hashing (LSH) is a technique used to find similar items in a dataset, first introduced in~\cite{Indyk1998approximate}\cite{Gionis1999similarity}.
-Generally LSH entails hashing items several times, so that similar items are more likely to be hashed to the same bucket than dissimilar items are. We then take a \term{candidate pair} any pair that hashes to the same bucket at least once.
+Generally LSH entails hashing items several times, so that similar items are more likely to be hashed to the same bucket than dissimilar items are. We then consider as a \term{candidate pair} any pair that ends up in the same bucket at least one hashing function.
 This technique can result in false positives and false negatives in the following cases:
 \begin{description}
     \item[false negatives] when pairs of truly similar items do not hash to the same bucket for any of the hashings,
-    \item[false positives] when pairs of dissimilar items hash to the same bucket for any of the hashings, that will be considered as candidate pairs. 
+    \item[false positives] when pairs of dissimilar items hash to the same bucket for any of the hashings, so they will wrongfully be considered as candidate pairs. 
 \end{description}
-In the following sections, we study how to generate candidate pairs using the banding technique and how to choose the appropriate parameters to balance the trade-off between false positives and false negatives.
+In the following sections, we study the properties of locality-sensitive functions and how to generate candidate pairs using the banding technique. We then examine how to choose the appropriate parameters to balance the trade-off between false positives and false negatives.
+
+\subsection{Locality-Sensitive functions}\label{LSfamily}
+To generate candidate pairs of items effectively and efficiently we need a specific \term{family} of hash functions, called locality-sensitive functions. Given our application, we limit our discussion to functions that take two items and render a decision about whether these items should be a candidate pair. From here on the notation $h(x)=h(y)$ stands for ``make $x$ and $y$ a candidate pair'', and conversely by $h(x)\neq h(y)$ we mean ``do not make $x$ and $y$ a candidate pair unless some other function concludes otherwise''. The functions in these families must satisfy the following conditions:
+\begin{itemize}
+    \item They must be more likely to make close pairs be candidates that distant pairs. Formally speaking, given $h$ a hash function in the family and two elements $x$, $y$ in a collection of objects $X$, the following is satisfied:
+    $$\mathbb{P}(h(x)=h(y))=\text{SIM}(x,y)$$
+    where $\text{SIM}: X^2 \to [0,1]$ is a similarity function.
+    \item They must be statistically independent, such that it is possible to estimate the probability of the responses of two or more functions by using the product rule for independent events.
+    \item They must be efficient, in the following ways:
+    \begin{itemize}
+        \item they must be able to identify candidate pairs in less time than it would take to look at all pairs (quadratic time in the number of items),
+        \item they must be combinable to build functions that are better at avoiding false positives and false negatives. Also these aggregate functions must take less time than looking at all pairs.
+    \end{itemize}
+\end{itemize}
+
+In general there is no guarantee that a distance measure has a locality-sensitive family of functions. Such families can be constructed for example for Jaccard distance, Hamming distance and Euclidean distance. In the Section~\ref{LSfamily:cosine} we show how to build a locality-sensitive family for the cosine similarity.
+
+Seen these characteristics we also refer to the locality-sensitive functions in family $\mathcal{F}$ as hash functions. 
 
 \subsection{Banding technique}\label{bandingTechnique}
-We call the compressed representation of an item a \term{signature}. The signature of an item is an array obtained by applying various hashing functions to the item. Once aligned, these arrays form a signature matrix $S\in\mathbb{N}^{l\times n}$, where $n$ is the number of elements in the dataset, and $l$ is the length of the signatures. One can choose the candidate pairs by dividing the signature matrix into $b$ bands consisting of $r$ rows each. For each of these bands we hash its $r$ values of the signature to some large bucket. To reduce the probability of false positives we:
+We call the compressed representation of an item a \term{signature}. The signature of an item is an array obtained by applying various hashing functions to the item. Once aligned, these arrays form a signature matrix $S\in\mathbb{N}^{l\times n}$, where $n$ is the number of elements in the dataset, and $l$ is the length of the signatures. One can choose the candidate pairs by dividing the signature matrix into $b$ bands consisting of $r$ rows each. For each of these bands we hash its $r$ values to some large bucket. To reduce the probability of false positives we do the following:
 \begin{itemize}
-    \item choose a distinct bucket array for each band, so that columns (items) with the same vector in different bands will not hash to the same bucket,
+    \item choose a distinct bucket array for each band, so that items (columns) with the same vector in different bands will not hash to the same bucket,
     \item apply a hash function having a great enough bucket for each of the $b$ portions of the signatures, so that different signature portions are not hashed to the same value.
 \end{itemize}
 
+
+\subsubsection{Choosing $r$ and $b$}\label{choosingCandidatePairs}
 The choice of $r$ and $b$ depends on the desired threshold $t$ on the similarity between items. 
 
-To determine the relationship between the parameters we analyze the probability of considering the pair of items $S$ and $T$ as a candidate. Having $b$ bands composed of $r$ rows each, and $\text{SIM}(S,T)=s$, we observe the following.
-\begin{equation*}
-    \begin{array}{rcl}
-        \mathbb{P}(\text{row}(S)=\text{row}(T))&=&s\\
-        \mathbb{P}(\forall \text{rows in given band }\text{row}(S)=\text{row}(T))&=&s^r\\
-        \mathbb{P}(\exists \text{row in given band}:\text{row}(S)\neq\text{row}(T) \text{ })&=&1-s^r\\
-        \mathbb{P}(\forall \text{rows }\forall\text{bands }\text{row}(S)\neq\text{row}(T) \text{ })&=&(1-s^r)^b\\
-        \mathbb{P}(\exists \text{band: }\forall \text{rows }\text{row}(S)=\text{row}(T) \text{ })&=&1-(1-s^r)^b=p(s)
-    \end{array}
-\end{equation*}
-The probability in the last row corresponds to the chance that the pair $(S,T)$ gets chosen as a candidate pair with level of similarity equal to $s$.
-In Figures~\ref{fig:s-curve1} and ~\ref{fig:s-curve2} we plot $p(s)$ for some values of $r$ and $b$, also called an S-curve. One observes that this curve can be seen as a continuous approximation of the threshold function.
+To determine the relationship between the parameters we analyze the probability of considering the pair of items $x$ and $y$ as a candidate pair. We recall that a candidate pair have at least a band that hashes to the same bucket for a certain hash function. Having $b$ bands composed of $r$ rows each, and $\text{SIM}(x,y)=s$, we observe the following.
+\begin{align}
+    \mathbb{P}(\text{in given band h\_band}(x)=\text{h\_band}(y))&= s \label{band_similarity}\\
+    \mathbb{P}(\forall \text{rows in giyen band }\text{h\_band}(x)=\text{h\_band}(y))&= s^r \notag\\
+    \mathbb{P}(\exists \text{row in given band}:\text{h\_band}(x)\neq\text{h\_band}(y))&= 1-s^r \notag\\
+    \mathbb{P}(\forall \text{rows }\forall\text{bands }\text{h\_band}(x)\neq\text{h\_band}(y))&= (1-s^r)^b \notag\\
+    \mathbb{P}(\exists \text{band: }\forall \text{rows }\text{h\_band}(x)=\text{h\_band}(y))&= 1-(1-s^r)^b=p(s) \notag
+\end{align}
+The probability in the last row corresponds to the chance that the pair $(x,y)$ gets chosen as a candidate pair with level of similarity equal to $s$.
+In Figures~\ref{fig:s-curve1} and ~\ref{fig:s-curve2} we plot $p(s)$ for some values of $r$ and $b$. One observes that resulting S-curve can be seen as a continuous approximation of the threshold function.
 \begin{figure}[ht]
     \centering
     \begin{subfigure}[b]{0.45\textwidth}
@@ -79,11 +77,9 @@ In Figures~\ref{fig:s-curve1} and ~\ref{fig:s-curve2} we plot $p(s)$ for some va
     \end{subfigure}
     \caption{S-curve examples}
 \end{figure}
-The steepest point in the S-curve is found approximately in $s^*=(\frac{1}{b})^\frac{1}{r}$, and corresponding height of $s*$ indicates the probability of a pair becoming a candidate. 
+The steepest point in the S-curve is found approximately in $s^*=(\frac{1}{b})^\frac{1}{r}$, and the height of the plot in $s^*$ indicates the probability of a pair becoming a candidate. 
 
-
-\subsection{Choosing candidate pairs}\label{choosingCandidatePairs}
-We use the hashed signatures constructed with LSH to extract a subset of similar pairs of reviews. A couple is chosen as a candidate only if the cosine similarity of their representations exceeds a given a threshold $t$. Observing Figures~\ref{fig:s-curve1} and ~\ref{fig:s-curve1} we see how $r$ and $b$ influence the position of the inflection point in the S-curve. So we would like to choose $r$ and $b$ such that $t=s^*$, so that the probability of choosing a pair rises when going above the threshold. As a consequence we have to choose $r$ and $b$ so to satisfy the following, bearing in mind that $l$ is the length of the signatures:   
+Observing Figures~\ref{fig:s-curve1} and ~\ref{fig:s-curve2} we see how $r$ and $b$ influence the position of the inflection point in the S-curve. So we would like to choose $r$ and $b$ such that $t=s^*$, so that the probability of choosing a pair rises when going above the threshold. As a consequence we have to choose $r$ and $b$ so to satisfy the following, bearing in mind that $l$ is the length of the signatures:   
 
 \begin{equation*}
     \begin{cases}
@@ -96,85 +92,90 @@ Solving this system for $r$ we have that~\footnote{$W$ is the Lambert $W$ functi
     r=-\frac{W(-l\ln(t))}{\ln(t)}
 \end{equation*}
 
-Having the representation of the items obtained though LSH, the candidate pairs are those items for which the cosine similarity of the hashed signatures is larger than $t$. Regardless, one has to check whether a candidate pair is indeed similar. For this reason, $r$ and $b$ can be tuned further to limit the amount of false positives or false negatives.
+Once the candidate pairs have been identified one has to check whether a candidate pair is indeed similar. For this reason, $r$ and $b$ can be tuned further to limit the amount of false positives or false negatives.
 \begin{description}
-    \item [\boldmath{$(\frac{1}{b})^\frac{1}{r}<s^*$}] to limit false negatives,
-    \item [\boldmath{$(\frac{1}{b})^\frac{1}{r}>s^*$}] to limit false positives.
+    \item [\boldmath{$t<(\frac{1}{b})^\frac{1}{r}$}] to limit false negatives,
+    \item [\boldmath{$t>(\frac{1}{b})^\frac{1}{r}$}] to limit false positives.
 \end{description}
 
-\section{Locality-Sensitive functions}\label{LSfamily}
-To generate candidate pairs of items effectively and efficiently we need a specific \term{family} of hash functions, called locality-sensitive functions. Given our application, we limit our discussion to functions that take two items and render a decision about whether these items should be a candidate pair. From here on the notation $f(x)=f(y)$ stands for ``make $x$ and $y$ a candidate pair'', and conversely by $f(x)\neq f(y)$ we mean ``do not make $x$ and $y$ a candidate pair unless some other function concludes otherwise''. The functions in these families must satisfy the following conditions:
-\begin{itemize}
-    \item They must be more likely to make close pairs be candidate pairs that distant pairs. Formally speaking, given $h$ a hash function in the family and two elements $x$, $y$ in a collection of objects $X$, the following is satisfied:
-    $$\mathbb{P}(h(x)=h(y))=\text{SIM}(x,y)$$
-    where $\text{SIM}: X^2 \to [0,1]$ is a similarity function.
-    \item They must be statistically independent, such that it is possible to estimate the probability of the responses of two or more functions by using the product rule for independent events.
-    \item They must be efficient, in the following ways:
-    \begin{itemize}
-        \item they must be able to identify candidate pairs in time much less that hte rime it takes to look at all pairs (quadratic time in the number of items),
-        \item they must be combinable to build functions that are better at avoiding false positives and false negatives. Also these aggregate functions must take less time than looking at all pairs.
-    \end{itemize}
-\end{itemize}
+\section{Locality-Sensitive family for cosine similarity}\label{LSfamily:cosine}
+Now we transfer the theory of LSH to the cosine similarity. We start by defining the cosine similarity, and then we show how to build a locality-sensitive family for cosine distance.
 
-Seen these characteristics we also refer to the locality-sensitive functions in family $\mathcal{F}$ as hash functions. 
+\subsection{Cosine similarity}\label{cosineSimilarity}
+The cosine distance is used in spaces that have multiple dimensions, such as Euclidean spaces. In these spaces points may be seen as the directions they trace from the origin. The cosine distance between two vectors is the angle $\theta$ between them. The degree of this angle is be in the range $[0,\pi]$, regardless of the dimensions in the space. 
 
-We can characterize a locality-sensitive family based on it's sensitivity, as defined below.
-\begin{definition}($(d_1, d_2, p_1, p_2)$-sensitive family of functions)
-    Let $d_1<d_2$ be two distances according to dome distance measure $d$. A family $\mathcal{F}$ of functions is said to be $(d_1, d_2, p_1, p_2)$-sensitive if fo every $f\in\mathcal{F}$ and for every pair of items $x$ and $y$:
-    \begin{itemize}
-        \item if $d(x,y)\leq d_1$ then $\mathbb{P}(f(x)=f(y))\geq p_1$,
-        \item if $d(x,y)\geq d_2$ then $\mathbb{P}(f(x)=f(y))\leq p_2$.
-    \end{itemize}
+\begin{definition}[cosine distance]\label{def:cosineDistance}
+    Given two vectors $u$ and $v$ in a space, the cosine distance between them is defined as
+    \begin{equation}
+        \text{d}(u,v)=\cos(u,v)=\frac{u\cdot v}{\|u\|\|y\|}
+    \end{equation}
 \end{definition}
 
-In general there is no guarantee that a distance measure has a locality-sensitive family of functions. Such families can be constructed for example for Jaccard distance, Hamming distance and Euclidean distance. In the following section we show how to build a locality-sensitive family for the cosine similarity.
+The cosine similarity depends on how far the angle between two vectors (represented by their cosine) is from $\pi$ radians.
 
-\subsection{Locality-Sensitive family for cosine similarity}\label{LSfamily_cosine}
-We recall from Section~\ref{cosineSimilarity} that the cosine distance between two vectors $x$ and $y$ is defined as the angle $\theta$ between them. This angle is measured on the plane defined by the vectors, regardless of the dimensions of the space they are in. We now consider a hyperplane that passes through the vertex of $\theta$. Looking at Figure~\ref{fig:angleHyperplane} we observe that the hyperplane can be positioned like hyperplane $a$ or $b$.
+\begin{definition}[cosine similarity]\label{def:cosineSimilarity}
+    Given two vectors $u$ and $v$ in a space, their cosine similarity is defined as
+    \begin{equation}
+        \text{SIM}(u,v)=1-\frac{\arccos\left(\cos(u,v)\right)}{\pi}
+    \end{equation}
+\end{definition}
+
+Given two vectors $u$ and $v$ the angle $\theta$ between them is measured on the plane defined by the vectors, regardless of the dimensions of the space they are in. We now consider a hyperplane that passes through the vertex of $\theta$. Looking at Figure~\ref{fig:angleHyperplane} we observe that the hyperplane can be positioned like hyperplane $a$ or $b$.
 \begin{figure}
     \centering
     \begin{tikzpicture}
-        \draw[->] (0,0) -- (3,1) node[anchor=west] {$x$};
-        \draw[->] (0,0) -- (2,-2) node[anchor=north] {$y$};
+        % Define colors
+        \definecolor{angleColor}{rgb}{0.2,0.2,0.4}
 
+        % Fill the angle region
+        \fill[angleColor, opacity=0.6] 
+        (0,0) -- (0.6,0.2) arc[start angle=0, end angle=-52, radius=0.7] -- cycle;
+
+        % Vectors
+        \draw[->, thick] (0,0) -- (3,1) node[anchor=west] {$u$};
+        \draw[->, thick] (0,0) -- (2,-2) node[anchor=north] {$v$};
+
+        % Hyperplanes
         \draw[dashed] (3,0.5) -- (-3,-0.5) node[anchor=north] {$a$};
-        \draw[->, dotted, gray] (0,0) -- (0.25,-1.5) node[anchor=west] {$v_a$};
-        \draw[->, dotted, gray] (0,0) -- (-0.25,1.5) node[anchor=east] {$v_a$};
+        \draw[->, dotted, gray] (0,0) -- (0.25,-1.5) node[anchor=west] {$n_a$};
+        \draw[->, dotted, gray] (0,0) -- (-0.25,1.5) node[anchor=east] {$n_a$};
 
         \draw[dashed] (-0.5,-2.5) -- (0.5,2.5) node[anchor=east] {$b$};
-        \draw[->, dotted, gray] (0,0) -- (-1.75, 0.25) node[anchor=south] {$v_b$};
-        \draw[->, dotted, gray] (0,0) -- (1.75, -0.25) node[anchor=north] {$v_b$};
-        \draw (0.6,0.2) arc[start angle=0, end angle=-52, radius=0.7];
-        \node at (0.8,-0.3) {$\theta$};
+        \draw[->, dotted, gray] (0,0) -- (-1.75, 0.25) node[anchor=south] {$n_b$};
+        \draw[->, dotted, gray] (0,0) -- (1.75, -0.25) node[anchor=north] {$n_b$};
+
+        % Angle theta
+        \draw[thick] (0.6,0.2) arc[start angle=0, end angle=-52, radius=0.7];
+        \node at (0.6,-0.3) {$\theta$};
     \end{tikzpicture}
-    \caption{Two vectors making an angle $\theta$ seen from above}\
+    \caption{Two vectors making an angle $\theta$ seen from above}
     \label{fig:angleHyperplane}
 \end{figure}
 
-We continue our considerations by referencing the normal vector $v$ of the hyperplane, such that the dot product of $v$ with all and only the set of points in the hyperplane is $0$. For the example in Figure~\ref{fig:angleHyperplane} the normal vectors of hyperplanes $a$ and $b$ are respectively $v_a$ and $v_b$.
+We continue our considerations by referencing the normal vector $n$ of a hyperplane; the dot product of $n$ with all and only the set of points in the hyperplane is $0$. In the example in Figure~\ref{fig:angleHyperplane} the normal vectors of hyperplanes $a$ and $b$ are respectively $n_a$ and $n_b$.
 
-In the case of hyperplane $a$ where $x$ and $y$ are on opposite sides, the signs of $v_a$ and $x$, and $v_a$ and $y$ are opposite, irrespective of whether $v_a$ extends above or below the projection of hyperplane $a$ (as shown in Figure~\ref{fig:angleHyperplane}). As a consequence the dot products $v_a\cdot x$ and $v_a\cdot y$ are both negative. Vice versa the dot products $v_b\cdot x$ and $v_b\cdot y$ are both positive, regardless of the position $v_b$ (see Figure~\ref{fig:angleHyperplane}).
+In the case of hyperplane $a$, $u$ and $v$ fall on opposite sides, thus the signs of $n_a$ and $u$, and $n_a$ and $v$ are opposite, irrespective of whether $n_a$ extends above or below the projection of hyperplane $a$ (as shown in Figure~\ref{fig:angleHyperplane}). As a consequence the dot products $n_a\cdot u$ and $n_a\cdot b$ are both negative. Vice versa the dot products $n_b\cdot a$ and $n_b\cdot b$ are both positive, regardless of the position of $n _b$ (see Figure~\ref{fig:angleHyperplane}).
 
 The probability that a randomly chosen hyperplane (or its normal vector) looks like $a$ is $\frac{\theta}{\pi}$. In all other cases the hyperplane is positioned like $b$.
 
-So, we build the locality sensitive family $\mathcal{F}$ as a set of randomly chosen vectors $\{v_{f\in\mathcal{F}}\}$. Given two vectors $x$ and $y$, they make a candidate pair of similar items if and only if the dot products $x\cdot v_f$ and $x \cdot v_f$ have the same sign. $\mathcal{F}$ is then a $(d_1, d_2, \pi-d_1, \pi-d_2)$-sensitive family of hash functions.
+\medskip
+We build the locality sensitive family $\mathcal{F}$ as a set of randomly chosen vectors $\{h_f\}_{f\in\mathcal{F}}$. Given two vectors $u$ and $v$, they make a candidate pair of similar items if and only if the dot products $u\cdot h_f$ and $v \cdot h_f$ have the same sign.
 
-We can show that these functions indeed form a locality-sensitive family for cosine distance by proving Lemma 3.2 in~\cite{Goesman1995ImprovedApproximationMAXCUT}.
+We can show that these functions indeed form a locality-sensitive family for cosine distance by proving the lemma below (Lemma 3.2 in~\cite{Goesman1995ImprovedApproximationMAXCUT}).
 
 \begin{lemma}
-    Let $u$ and $v$ be two vectors in $\mathbb{R}^d$ and $\mathcal{F} $ a locality-sensitive family for cosine distance. Then
-    $$\mathbb{P}_{h\in\mathcal{F}}(h(u)=h(v))=\mathbb{P}_{h\in\mathcal{F}}(\text{sgn}(u\cdot r)=\text{sgn}(v\cdot r))=1-\frac{\theta(u,v)}{\pi}$$    
-    where $\theta(u,v)$ is the angle between the vectors $u$ and $v$, and $r$ is a random hyperplane.
+    Let $u$ and $v$ be two vectors in $\mathbb{R}^d$ that form an angle $\theta$, and $\mathcal{F} $ a locality-sensitive family for cosine distance. Then
+    $$\mathbb{P}_{h\in\mathcal{F}}(h(u)=h(v))=\mathbb{P}_{h\in\mathcal{F}}(\text{sgn}(u\cdot r_h)=\text{sgn}(v\cdot r_h))=1-\frac{\theta}{\pi}$$    
+    where $r_h$ is the random hyperplane corresponding to $h \in \mathcal{F}$.
     \begin{proof}
         The statement entails that the probability of the random hyperplane separating the two vectors is directly proportional to the angle between the vectors. Looking at the complementary event, we have that
-        $$\mathbb{P}_{h\in\mathcal{F}}(\text{sgn}(u\cdot r)\neq\text{sgn}(v\cdot r)) = 2\cdot \mathbb{P}(u\cdot r \geq 0 \land v\cdot r <0)$$.
-        The set of vectors $\{r\mid u\cdot r \geq 0 \land v\cdot r<0\}$ corresponds to the intersection of two half-spaces whose diheral angle is $\theta(u,v)$. (For reference look at hyperplane $b$ w.r.t vectors $x$ and $y$ in Figure~\ref{fig:angleHyperplane}). The sphere digon intersected by the two hyperplanes has angle $\theta(u,v)$, in other words $\frac{\theta(u,v)}{2\pi}$ times the measure of the full sphere. It follows that $\mathbb{P}_{h\in\mathcal{F}}(\text{sgn}(u\cdot r)\neq\text{sgn}(v\cdot r))=\frac{\theta(u,v)}{2\pi}$, and the Lemma is so proven.
+        $$\mathbb{P}_{h\in\mathcal{F}}(\text{sgn}(u\cdot r_h)\neq\text{sgn}(v\cdot r_h)) = 2\cdot \mathbb{P}(u\cdot r_h \geq 0 \land v\cdot r_h <0).$$
+        The set of vectors $\{r \in \mathbb{R}^d\mid u\cdot r \geq 0 \land v\cdot r<0\}$ corresponds to the intersection of two half-spaces whose diheral angle is $\theta$. The sphere digon intersected by the two hyperplanes has angle $\theta$, in other words $\frac{\theta}{2\pi}$ times the measure of the full sphere. It follows that $\mathbb{P}_{h\in\mathcal{F}}(\text{sgn}(u\cdot r_h)\neq\text{sgn}(v\cdot r_h))=\frac{\theta}{2\pi}$, and the Lemma is so proven.
     \end{proof}
 \end{lemma}
-The function $1-\frac{\theta}{\pi}$ is strictly related to $\cos(\theta)$ given that the former is always within a factor $0.878$ from the latter. In addition, $\cos(\theta)$ can be estimated from the estimate of $\theta$ (refer to Theorem 3.3 in~\cite{Goesman1995ImprovedApproximationMAXCUT}). Also, the probability of two hash functions colliding is exactly equal to the cosine similarity, defined in Definition~\ref{def:cosineSimilarity}.
+Observe that the probability of two hash functions colliding is exactly equal to the cosine similarity, defined in Definition~\ref{def:cosineSimilarity}.
 
 \subsubsection{Choice of random vectors}
-To build the locality-sensitive family $\mathcal{F}$, instead of choosing any random vectors, it is sufficient to consider vectors $f\in \mathcal{F}$ with components in $\{-1,1\}$. This sensibly simplifies the computation of dot products $f\cdot x$, that are simply the algebraic sum of the components of $v$ with their sign depending on the corresponding components of $x$.
+To build the locality-sensitive family $\mathcal{F}$, instead of choosing any random vectors, it is sufficient to consider vectors $h\in \mathcal{F}$ with components in $\{-1,1\}$. This sensibly simplifies the computation of dot products $h\cdot v$: it if sufficient to compute the algebraic sum of the components of $v$ with their sign depending on the corresponding components of $h$.
 % 
 % % contribution of each feature to PCA
-% % compare to UMAP results
