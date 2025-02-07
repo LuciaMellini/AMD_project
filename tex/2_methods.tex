@@ -3,12 +3,9 @@ To find similar items in a dataset it would be unthinkable to compare all possib
 
 \section{Locality-Sensitive Hashing (LSH)}\label{LSH}
 Locality-Sensitive Hashing (LSH) is a technique used to find similar items in a dataset, first introduced in~\cite{Indyk1998approximate}\cite{Gionis1999similarity}.
-Generally LSH entails hashing items several times, so that similar items are more likely to be hashed to the same bucket than dissimilar items are. We then consider as a \term{candidate pair} any pair that ends up in the same bucket at least one hashing function.
-This technique can result in false positives and false negatives in the following cases:
-\begin{description}
-    \item[false negatives] when pairs of truly similar items do not hash to the same bucket for any of the hashings,
-    \item[false positives] when pairs of dissimilar items hash to the same bucket for any of the hashings, so they will wrongfully be considered as candidate pairs. 
-\end{description}
+Generally LSH entails hashing items several times, so that similar items are more likely to be hashed to the same bucket than dissimilar items are. We then consider as a \term{candidate pair} any pair that ends up in the same bucket at least one hashing function. This technique can result in false positives and false negatives.
+
+\medskip
 In the following sections, we study the properties of locality-sensitive functions and how to generate candidate pairs using the banding technique. We then examine how to choose the appropriate parameters to balance the trade-off between false positives and false negatives.
 
 \subsection{Locality-Sensitive functions}\label{LSfamily}
@@ -159,7 +156,7 @@ In the case of hyperplane $a$, $u$ and $v$ fall on opposite sides, thus the sign
 The probability that a randomly chosen hyperplane (or its normal vector) looks like $a$ is $\frac{\theta}{\pi}$. In all other cases the hyperplane is positioned like $b$.
 
 \medskip
-We build the locality sensitive family $\mathcal{F}$ as a set of randomly chosen vectors $\{h_f\}_{f\in\mathcal{F}}$. Given two vectors $u$ and $v$, they make a candidate pair of similar items if and only if the dot products $u\cdot h_f$ and $v \cdot h_f$ have the same sign.
+We build the locality sensitive family $\mathcal{F}$ as a set of randomly uniform chosen vectors $\{h_f\}_{f\in\mathcal{F}}$. Given two vectors $u$ and $v$, they make a candidate pair of similar items if and only if the dot products $u\cdot h_f$ and $v \cdot h_f$ have the same sign.
 
 We can show that these functions indeed form a locality-sensitive family for cosine distance by proving the lemma below (Lemma 3.2 in~\cite{Goesman1995ImprovedApproximationMAXCUT}).
 

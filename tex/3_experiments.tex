@@ -1,88 +1,78 @@
 \chapter{Experiments}\label{experiments}
-In this Chapter we illustrate how we have chosen to pre-process the movie data. Then, in Section~\ref{experiments_parameters} we outline the parameters that have been chosen to determine similar items in the dataset. We also outline how the data has been organized in the implementation (Section~\ref{experiment_dataOrganization}). Stemming from that we analyze the computational cost of the experiments  in Section~\ref{experiments_cost}.
+In this chapter we explain how we have chosen to pre-process the movie data (Section~\ref{experiments_preProcessing}). In Section~\ref{experiments_definition} we outline the structure and the parameters of the experiments brought out to find similar items in the dataset. We also outline how the data has been organized in the implementation (Section~\ref{experiments_dataOrganization}). Stemming from that we analyze the computational cost of the experiments in Section~\ref{experiments_cost}.
 
 \section{Data pre-processing}\label{experiments_preProcessing}
 First we motivate the choice of the features on which we have based the comparison between movies. We then describe how we have transformed the data into vectors.
 \subsection{Chosen movie features}
 We have chosen to focus only on some of the features available for each movie. Specifically we have considered the following attributes, grouped according to the categories provided by the dataset:
-\begin{itemize}
-    \item \textit{actors}
-    \begin{itemize}
-        \item names of the first 6 starring actors
-    \end{itemize}
-    \item \textit{crew}
-    \begin{itemize}
-        \item director(s)
-    \end{itemize}
-    \item \textit{genre}
-    \begin{itemize}
-        \item list of genres
-    \end{itemize}
-    \item \textit{movies}
-    \begin{itemize}
-        \item title
-        \item date (release year)
-        \item duration (in minutes)
-        \item rating (on a scale from 0 to 5)
-    \end{itemize}
-    \item \textit{themes}
-    \begin{itemize}
-        \item list of themes
-    \end{itemize}
-\end{itemize}
+\begin{table}[h]
+    \centering
+    \begin{tabular}{rl}
+        \toprule
+        \textbf{Member} & \textbf{Attributes} \\ 
+        \midrule
+        \textit{actors}   & Names of the first 6 starring actors \\ 
+        \textit{crew}     & Director(s) \\ 
+        \textit{genre}    & List of genres \\ 
+        \textit{movies}   & Title, Release year, Duration (in minutes), Rating (0 to 5) \\ 
+        \textit{themes}   & List of themes \\ 
+        \bottomrule
+    \end{tabular}
+    \label{tab:movie_info}
+\end{table}
 
-The rational behind the exclusion of the other attributes is based on the aspects that a user would consider when choosing a movie. For example, we believe that the six main actors, ordered by importance in the dataset, are sufficient to also include possible cameos that could push someone to watch a movie. Also, a generic viewer could be interested in who directed the movie, but less in the writer of the screenplay, or other crew members. These aspects could be added for a more interested audience. We have chosen to remove the tagline and the description of the movies since they are possibly unique or very dissimilar for every movie. Also, this would have involved a more extensive natural language processing step. The other features provided (the country of the movie's production company, its languages, its the posters, the information about the movie's releases and the studios where it was made) are strongly related to the production and release aspects, so not of particular interest to the user. If the evaluation of similar items where to be integrated in a recommendation system it would be fitting to check if the user knows a language in which a suggested movie is produced.
+The rationale behind the exclusion of the other attributes is based on the aspects that a user would consider when choosing a movie. For example, we believe that the six main actors, ordered by importance in the dataset, are sufficient to also include possible cameos that could push someone to watch a movie. Also, a generic viewer might be interested in who directed the movie, but less in the writer of the screenplay, or other crew members. These aspects could be added for a more interested audience. We have chosen to remove the tagline and the description of the movies since they are possibly unique or very dissimilar for every movie. Also, this would have involved a more extensive natural language processing step. The other features provided (the country of the movie's production company, its languages, its posters, the information about the movie's releases and the studios where it was made) are strongly related to production and release aspects, so not of particular interest to the final user. If the evaluation of similar items where to be integrated in a recommendation system it would be fitting to check if the user is proficient in a language in which a suggested movie is produced.
 
 \subsection{Data point embedding}\label{preProcessing_embedding}
-To preserve the independent role of each attribute we have decided to measure their similarity using cosine distance. This entails translating all data regarding a movie into a vector with components in $\mathbb{R}$. It is evident that the textual attributes have to be transformed into values to be able to work in an Euclidean space. Since the vectors resulting from the embedding step must have same dimension, we have merged attributes having multiple values (multiple directors, themes and genres) by averaging their respective text encodings.
+To preserve the independent role of each attribute we have decided to measure the similarity between movies using cosine distance. This demands translating all data regarding a movie into a vector with components in $\mathbb{R}$. It is evident that the textual attributes have to be transformed into numerical values to be able to work in a Euclidean space. Since the vectors resulting from the embedding step must have same dimension, we have merged attributes having multiple values (multiple \attribute{directors}, \attribute{themes} and \attribute{genres}) by averaging their respective text encodings.
 The following paragraphs are dedicated to these transformations.
 
 \subsubsection{Text encoding - name, genres, themes}
-We have processed the values for the attributes name, genres and themes similarly. In fact we desired to embed these features as to preserve the similarity of the relative text. For movies, for example, we would like sequels to be close by in the embedding space. We also would like to account for genres registered in the dataset in slightly different ways (e.g. science-fiction and Science Fiction), but bring the same meaning in terms of genre. For the themes we also want to preserve the distance in meaning between them, based on the principal words used to define them.
+We process the values for \attribute{name}, \attribute{genres} and \attribute{themes} attributes similarly. In fact we desire to embed these features as to preserve the similarity of the relative text. For movie titles, for example, we would like sequels to be close by in the embedding space. We also would like to account for genres registered in the dataset in slightly different ways (e.g. ``science-fiction'' and ``Science Fiction''), by distilling the meaning in terms of genre. Also for the themes we would like to preserve their distance in meaning, based on the principal words used to define them.
 
-To do this we have relied on the static vectors provided by spaCy\cite{Montani2023SpaCy}, which have $300$ components. We have used the medium-sized English model, which is trained on web data\footnote{Details at \url{https://spacy.io/models/en\#en_core_web_md}}. We have then averaged the vectors of the words in the text to obtain a single vector for the text.
+To do this we rely on the static vectors provided by \textit{spaCy}~\cite{Montani2023SpaCy}, which have $300$ components. We use the medium-sized English language model, which is trained on web data\footnote{Details at \url{https://spacy.io/models/en\#en_core_web_md}}. We average the vectors of the words in the text to obtain a single encompassing vector.
 
-Since the theme attribute values are sentence-like, we have also removed the stop words in the text and transformed all the remaining tokens into their relative lemmas. For both these processing steps we have used the operations provided by SpaCy. This additional simplifications of the themes' texts is useful to focus on the meaning of a given theme, instead of relying also on the formulation of the sentence.
+Since the \attribute{themes} values are sentence-like, before vectorization we remove the stop words in the text and transform all the remaining tokens into their relative lemmas. For both these processing steps we use the operations implemented by \textit{spaCy}. These additional simplifications of the themes' texts is useful to focus on the meaning of a given theme, without accounting for the formulation of the sentence.
 
 \subsubsection{Text encoding - actors, directors}
 We proceeded differently for actors and directors' names. In this case we have applied a hash function to the textual values to not add a bias towards similar names. It would not make sense that a movie directed by the child of a famous director would be considered similar to one of their works (e.g. Sofia Coppola is stylistically miles away from her father Francis Ford Coppola). The same goes, for example, for homonyms in the actors' names.
 
-We have used the hashing function \textit{shake\_256} implemented by the Python library \texttt{hashlib}\footnote{Documentation found at~\url{https://docs.python.org/3/library/hashlib.html\#hashlib.shake\_256}}, that we have preferred over the other functions offered by the library since it provides variable length digests. This feature will 
+We have used the hashing function \textit{shake\_256} implemented by the Python library \textit{hashlib}\footnote{Documentation found at~\url{https://docs.python.org/3/library/hashlib.html\#hashlib.shake\_256}}, that we have preferred over other functions offered by the library since it provides variable length digests.
 
 \subsection{Dimensionality reduction}
-Following the steps described above we end up with a vector of size $910$ for each movie. If we were to evaluate the similarity of the movies using these representation we would incur in the so called ``curse of dimensionality" problem. 
+Following the steps described above we end up with a vector of size $910$ for each movie. If we were to evaluate the similarity of the movies using these representations we would incur in the so called ``curse of dimensionality" problem. 
 
 \subsubsection{Standardization}
-To avoid different features having different weight in the vector dimension reduction process we have standardized the data. Namely, for each feature we have applied the following operation:
+To avoid different features having different weights in the vector dimension reduction process we standardize the data. Namely, for each feature we apply the following operation:
 \begin{equation}
-    {x^f_{\text{std}}}_i=\frac{x^f_i-\mu}{\sigma}
+    {x^f_{i_{\text{std}}}}=\frac{x^f_i-\mu}{\sigma}
 \end{equation}
-where $x^f_i$ is the value for the $i$-th item of the feature $f$, $\mu$ is the sample mean of the $f$ and $\sigma$ is the sample standard deviation of $f$.
+where $x^f_i$ is the value for the $i$-th item for feature $f$, $\mu$ is the sample mean of the values for $f$ and $\sigma$ is the sample standard deviation of the values for $f$.
 
 \subsubsection{Principal-Component Analysis (PCA)}
-We have then applied Principal Component Analysis (PCA)~\cite{Pearson1901lines} to reduce the dimensionality of the data. This approach identifies the directions along which data points in a high-dimensional space are most spread out. The principal eigenvector of the covariance matrix of the dataset\footnote{Given a dataset expressed as a matrix $X$ where each of the $n$ rows represents a data point and each column corresponds to a variable, it's covariance matrix is defined as $\frac{1}{n-1}X^{T}X$. So, the covariance matrix of a dataset captures the relationships between variables.} represents the axis of maximum variance. Subsequent eigenvectors (axes) capture the highest variance orthogonally. This technique reduces dimensionality by projecting the original data onto the most significant components, providing a lower-dimensional approximation that summarizes the data efficiently.
-During the experiments we have chosen to keep the number of components that explain the desired percentage of the variance in the data. We choose the first $k$ principal components such that
-\begin{equation}
+We then apply Principal Component Analysis (PCA)~\cite{Pearson1901lines} to reduce the dimensionality of the data. This approach identifies the directions along which data points in a high-dimensional space are most spread out. The principal eigenvector of the covariance matrix of the dataset\footnote{Given a dataset expressed as a matrix $X$ where each of the $n$ rows represents a data point and each column corresponds to a variable, it's covariance matrix is defined as $\frac{1}{n-1}X^{T}X$. So, the covariance matrix of a dataset captures the relationships between variables.} represents the axis of maximum variance. Subsequent eigenvectors (axes) capture the highest variance orthogonally. This technique reduces dimensionality by projecting the original data onto the most significant components, providing a lower-dimensional approximation that summarizes the data efficiently.
+During the experiments we choose to keep the number of components that explain the desired percentage of the variance in the data. We choose the first $k$ principal components such that
+\begin{equation*}
     k = \arg\min_{k}{\text{CEV}_k \geq t}
-\end{equation}
-where $t$ is the chosen threshold for the explained variance and $CEV_k$ is the cumulative explained variance for the first $k$ components and is defined as
+\end{equation*}
+where $t$ is the chosen threshold for the explained variance and $\text{CEV}_k$ is the cumulative explained variance for the first $k$ components and is defined as
 
-\begin{equation}
+\begin{equation*}
     \text{CEV}_k = \frac{\sum_{i=1}^{k} \lambda_i}{\sum_{i=1}^{n} \lambda_i}
-\end{equation}
-where $\lambda_i$ is the $i$-th eigenvalue of the covariance matrix.
+\end{equation*}
+where, having the eigenvalues sorted in non-increasing order, $\lambda_i$ is the $i$-th eigenvalue of the covariance matrix.
 
 \section{Experiment definition}\label{experiments_definition}
-In this section, we outline the parameters available for conducting the experiments. We then describe the steps involved in each experiment, divided into two phases: pre-processing and identifying similar movies. We then evaluate the computational cost of executing an experiment in terms of the size of the dataset.
+In this section, we outline the parameters available for conducting the experiments. We then describe the steps involved in each experiment, divided into two phases: pre-processing and identifying similar movies. We delve into some implementation notes regarding the used data structures. We then evaluate the computational cost of running an experiment in terms of the size of the dataset.
 
 \subsection{Parameters}\label{experiments_parameters}
-We have assumed that the process of polishing the data and embedding it into vectors is fixed, and is brought out as described in Section~\ref{preProcessing_embedding}.
+We assume that the process of polishing the data and embedding it into vectors is fixed, and is brought out as described in Section~\ref{preProcessing_embedding}.
 
 The parameters that have to be chosen to run an experiment are the following:
 \begin{description}
     \item \textbf{Data pre-processing}
     \begin{itemize}
-        \item $t_\text{PCA}$: percentage of the variance in the data that we want to explain with the principal components.
+        \item $t_\text{PCA}$: percentage of variance in the data that we want to explain with the principal components
     \end{itemize}
     \item \textbf{Finding similar movies}
     \begin{itemize}
@@ -107,16 +97,15 @@ For simplicity we refer to a schematic explanation of an experiment in Algorithm
     \SetKwFunction{FindSimilar}{FindSimilarItems}
     
     \SetKwProg{Fn}{Function}{:}{}
-    \Fn{\Preprocess{data, $t_\text{PCA}$}}{
-        Data embedding\;
+    \Fn{\Preprocess{$data$, $t_\text{PCA}$}}{
+        Embed the data\;
         Standardize the vectors\;
-        Apply PCA to the data, keeping $k_{t_\text{PCA}}$ components\;
+        Apply PCA to the vectors, keeping $k_{t_\text{PCA}}$ components\;
         \KwRet preprocessed data\;
     }
     
-    \Fn{\FindSimilar{data, $l,t,b,r,h$}}{
-        Build the signature matrix $S\in\{-1,1\}^{l\times t
-        k_{t_\text{PCA}}}$, by creating $l$ random hyperplanes\;
+    \Fn{\FindSimilar{$data$, $l,t,b,r,h$}}{
+        Build the signature matrix $S\in\{-1,1\}^{l\times k_{t_\text{PCA}}}$ by extracting $l$ random hyperplanes\;
         Divide the signature matrix into $b$ bands of $r$ rows each\;
         Hash the bands in the range $[0,h-1]$\;
         Determine candidate pairs\;
@@ -125,7 +114,7 @@ For simplicity we refer to a schematic explanation of an experiment in Algorithm
     }
     
     \SetAlgoLined
-    \KwIn{data: set of $n$ data points, $t_\text{PCA}, l, t, b, r, h$}
+    \KwIn{$data$: set of $n$ data points, $t_\text{PCA}, l, t, b, r, h$}
     //Load the data\;
     //Polish the data\;       \label{line:polish}
     data $\gets$ \Preprocess{data, $t_\text{PCA}$}\;
@@ -135,42 +124,42 @@ For simplicity we refer to a schematic explanation of an experiment in Algorithm
 \end{algorithm}
 
 \section{Data organization}\label{experiments_dataOrganization}
-The experiments described in the previous section have been implemented using objects of type \textit{Resilient Distributed Dataset (RDD)}, provided by Apache Spark\footnote{Documentation at \url{https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.RDD.html}}. We list the pairs of key, value pairs that we have used to represent the data in the RDDs. To motivate the RDD structure appearing during data embedding we included how we have loaded the dataset and polished it.
+The experiments described in the previous section have been implemented using objects of type \textit{Resilient Distributed Dataset (RDD)}, provided by Apache Spark\footnote{Python documentation at \url{https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.RDD.html}}. We list the key-value pairs used to represent the data in the RDDs. To motivate the RDD structure appearing during data embedding we include how we have loaded the dataset and polished it.
 \begin{description}
-    \item [Data loading] The files in csv format provided by the dataset have been loaded into an RDD for each csv file (\term{member}), namely actors, crew, genres, movies and themes. Each RDD \texttt{letterboxd\_RDD[member]} contains tuples in the following structure.
+    \item [Data loading] The data in \textit{csv} format is loaded into an RDD for each csv file (\term{member}), namely \attribute{actors}, \attribute{crew}, \attribute{genres}, \attribute{movies} and \attribute{themes}. Each RDD \texttt{letterboxd\_RDD[member]} contains tuples in the following structure.
         $$\begin{array}{c}
             (id, \{k_a: v_{ia}, k_b: v_{ib}, \dots, k_p: v_{ip}\})\\
             (id, \{k_a: v_{ja}, k_b: v_{jb}, \dots, k_p: v_{jp}\})\\
             \cdots
         \end{array}$$
-    Note that in this phase the ids are not unique, since for each movie one has for example multiple actors, each with their attributes (e.g. actor $1$ with name $v_{a_i}$ and role $v_{b_i}$, and actor $2$ with name $v_{a_j}$ and role $v_{b_j}$).
+    Note that in this phase the ids are not unique, since for each movie one has for example multiple actors, each with their attributes (e.g. actor $1$ with name $v_{a_i}$ and role $v_{b_i}$, and actor $2$ with name $v_{a_j}$ and role $v_{b_j}$ starring in the same movie).
 
-    \item [Data polishing] At the end of the polishing phase, individual for each member, the resulting RDDs are joined to form a unique RDD. The structure of \texttt{movie\_RDD}'s rows is shown below.
+    \item [Data polishing] At the end of the individual polishing phase for each member, the resulting RDDs are joined to form a unique RDD. The structure of \texttt{movie\_RDD}'s rows is shown below.
         $$\begin{array}{c}
             (id_1, \{k_a: v_{1a}, k_b: v_{1b}, \dots, k_p: v_{1p}\})\\
             (id_2, \{k_a: v_{2a}, k_b: v_{2b}, \dots k_p: v_{2p}\})\\
             \cdots
         \end{array}$$
-    In this RDD and the following the movie ids are unique. The attributes of the movies can have single values (e.g. the release year) or lists of values (e.g. the movies' genres). More precisely, $v_{a_1}$ can be of a numerical or textual type, or be a list of strings.
+    In this RDD and all the following the movie ids are unique. The attributes of the movies can have single values (e.g. the release year) or lists of values (e.g. the movies' genres). More precisely, $v_{a_1}$ can be of a numerical or string type, or be a list of strings.
 
-    \item [Data embedding] After this step all the features are expressed in numerical values or lists of numerical values. At this point we get rid of the lists of values for some od the features by averaging their values. We have chosen this approach to deal with lists of various lengths. Although this is a simplistic reduction method these values will be interpreted as coordinates in a multidimensional space, so averaging some of them corresponds to summarizing multiple points on a certain axes onto a single point. At the end of this operation for each id in the RDD \texttt{vectors\_RDD} there is a list containing the elements in the dictionary, as illustrated below. The elements in the lists are sorted according to the keys of the dictionaries, as to align each attribute with a specific dimension in the Euclidean space.
+    \item [Data embedding] After the embedding step all the features are expressed in numerical values or lists of numerical values. At this point we get rid of the lists of values by replacing them with their averages. We have chosen this approach to deal with lists of various lengths. Although this is a simplistic reduction method these values will be interpreted as coordinates in a multidimensional space, so averaging some of them corresponds to summarizing multiple points on a certain axes onto a single point. At the end of this operation for each id in \texttt{vectors\_RDD} there is a list containing the values it's former dictionary, as illustrated below. The elements in the lists are sorted according to the keys of the dictionaries, as to align each attribute with a specific dimension in the Euclidean space.
         $$\begin{array}{c}
             (id_1, [d_1[k_a], d_1[k_b], \dots, d_1[k_p]])\\
             (id_2, [d_2[k_a], d_2[k_b], \dots, d_2[k_p]])\\
             \cdots
         \end{array}$$
-    These lists all have length equal to the number of features for the movies, where the vectorized features each contribute with the size of the embedding ($300$ in the case of spaCy's word vectorizations).
+    These lists all have length equal to the number of attributes for the movies, where the vectorized features each contribute with the size of the embedding ($300$ in the case of \textit{spaCy}'s word vectorizations).
     
     \item [Data standardization] This phase leaves the structure unchanged with respect to the previous one.
 
-    \item [Dimension reduction] The structure of the RDD \texttt{vectors\_reduced\_RDD} is the same as the one of \texttt{vectors\_RDD}, but the lists of values have been reduced to the first $k_{t_\text{PCA}}$ components of the PCA. The structure of the RDD is shown below.
+    \item [Dimension reduction] \texttt{vectors\_reduced\_RDD} is structured like \texttt{vectors\_RDD}, but the lists of values have been reduced to the first $k_{t_\text{PCA}}$ components of the PCA. The structure of the RDD is shown below.
         $$\begin{array}{c}
-            (id_1, [d_1[k_a], d_1[k_b], \dots, d_1[k_{k_{t_\text{PCA}}}]])\\
-            (id_1, [d_2[k_a], d_2[k_b], \dots, d_2[k_{k_{t_\text{PCA}}}]])\\
+            (id_1, [d_1[k_{a'}], d_1[k_{b'}], \dots, d_1[k_{k_{t_\text{PCA}}}]])\\
+            (id_1, [d_2[k_{a'}], d_2[k_{b'}], \dots, d_2[k_{k_{t_\text{PCA}}}]])\\
             \cdots
         \end{array}$$
 
-    \item [Building the signature matrix] The structure of the RDD \texttt{signature\_matrix\_RDD} is the following.
+    \item [Building the signature matrix] The RDD \texttt{signature\_matrix\_RDD} is organized as:
         $$\begin{array}{c}
             (id_1, [s_{11}, s_{12}, \dots, s_{1l}])\\
             (id_2, [s_{12}, s_{22}, \dots, s_{2l}])\\
@@ -178,7 +167,7 @@ The experiments described in the previous section have been implemented using ob
         \end{array}$$
     where $s_i$ is either $1$ or $-1$. These signatures have been computed by projecting the data points in \texttt{vectors\_reduced\_RDD} onto $l$ random hyperplanes. The locality sensitive family is organized in an RDD containing $l$ rows, where each pair has a key indicating the hash function number, and the value is a list $\{-1,1\}^{k_{t_\text{PCA}}}$.
 
-    \item [Banding the signature matrix] The bands in the signature matrix have been represented by dividing each of the signatures into $b$ sublists of length $r$ (the last list could contain ${t_\text{PCA}\equiv q(\mod b)}$ elements, with $q < r$ ). So, \texttt{signatures\_RDD} will be altered such to have rows in the shape below.
+    \item [Banding the signature matrix] The bands in the signature matrix have been applied by dividing each of the signatures into $b$ sublists of length $r$ (the last list could contain ${t_\text{PCA}\equiv q\mod b}$ elements, with $q < r$ ). So, \texttt{signatures\_RDD} will be altered to have rows in the shape below.
         $$\begin{array}{c}
             (id_1, [[s_{11}^{(1)}, s_{12}^{(1)}, \dots, s_{1r}^{(1)}], \dots, [s_{2(q-2)}^{(b)},s_{2(q-1)}^{(b)},\dots,s_{1q}^{(b)}]])\\
             (id_2, [[s_{21}^{(1)}, s_{22}^{(1)}, \dots, s_{2r}^{(1)}], \dots, [s_{2(q-2)}^{(b)},s_{2(q-1)}^{(b)},\dots,s_{1q}^{(b)}]])\\
@@ -186,8 +175,7 @@ The experiments described in the previous section have been implemented using ob
         \end{array}$$
     After applying the hash function to the bands, the resulting RDD \texttt{hashed\_signatures\_RDD} will have values that are lists of integers in the range $[0,h-1]$ of length $b$.
 
-    \item [Finding candidate pairs]
-    At this point one has to evaluate all possible pairs of items by looking at their banded signatures. To do this for each hashed signature we prepare a series of rows of the following format:
+    \item [Finding candidate pairs] For each hashed signature we prepare a series of rows of the following format:
         $$\begin{array}{c}
             ((a, v_{1a}), id_1)\\
             ((a, v_{2a}), id_2)\\
@@ -195,9 +183,9 @@ The experiments described in the previous section have been implemented using ob
             ((b, v_{1b}), id_1)\\
             ((b, v_{2b}), id_2)\\
         \end{array}$$
-    where $v_ij$ is the value in position $j$ for movie with $id_i$. Hence, when these rows are reduced by key we will obtain as values the lists of movie ids that have the same hashed band value in a given position in the hashed signature. It is then sufficient to create all the possible row combinations between candidate movies. 
+    where $v_{ij}$ is the value in position $j$ for movie $id_i$. Hence, when these rows are reduced by key we obtain the lists of movie ids that have the same value in a given band in their hashed signature. It is then sufficient to create all the possible pair combinations between candidate movies. 
     
-    \item [Filtering similar items] To pinpoint the actual similar items among the candidate pairs, we associate each row in \texttt{candidate\_pairs\_RDD} with the vector representation of their ids stored in \texttt{vectors\_RDD}. The intermediate RDD \texttt{candidate\_pairs\_with\_similarity\_RDD} has the following format.
+    \item [Filtering similar items] To pinpoint the actual similar items among the candidate pairs, we associate each row in \texttt{candidate\_pairs\_RDD} with their movies' vector representations stored in \texttt{vectors\_RDD}. The intermediate RDD \texttt{candidate\_pairs\_with\_similarity\_RDD} has the following format.
         $$\begin{array}{c}
             ((id_i, id_j), ([e_{i1}, e_{i2}, \dots, e_{ip}], [e_{j1}, e_{j2}, \dots, e_{jp}]))\\
         \end{array}$$
@@ -207,16 +195,16 @@ The experiments described in the previous section have been implemented using ob
            ((id_r, id_s), \text{SIM}(v_r, v_s)) \\
            \cdots
         \end{array}$$
-    where having the similarity value is not necessary to solve the problem, but is useful while evaluating results.
+    where the explicit similarity value is not necessary to solve the problem, but is useful while evaluating results.
 
 \end{description}
 
 \section{Computational cost}\label{experiments_cost}
-Taking in account that we have based out implementation on RDDs, we evaluate the computation cost of an experiment in terms of the \term{communication costs} of each task. So, the efficiency of the implementation depends on the sum of the communication costs of all the tasks. By task we mean any transformation applied to an RDD, and it's communication cost is measured as the size of the input of the task. We will be using the number of tuples to measure such size. We focus on the time necessary to move tuples between nodes in the computing cluster seen that each task tends to be simple, or at least linear in the size of the values.
-Following the steps of the experiment in Table we outline the communication cost for each task, given $n$ the amount of movies in the dataset. We also include efficiency measures for the data loading and polishing steps. In addition to the parameters defined in Section~\ref{experiments_parameters}, we introduce the following quantities:
+Taking into account that we have based out implementation on RDDs, we evaluate the computation cost of an experiment in terms of the \term{communication cost} of each task. The total efficiency of the implementation depends on the sum of the communication costs of all the tasks. By task we mean any transformation applied to an RDD, and it's communication cost is measured as the size of the input of the task. We will be using the number of key-value pairs to measure the input size. We only focus on the time necessary to move tuples between nodes in the computing cluster seen that each task tends to be simple, or at most linear in the size of the values.
+Following the steps of the experiment in Table~\ref{tab:communicationCost} we outline the communication cost for each task, given $n$ the amount of movies in the dataset. We also include efficiency measures for the data loading and polishing steps. In addition to the parameters defined in Section~\ref{experiments_parameters}, we introduce the following quantities:
 \begin{itemize}
-    \item $k_\text{actors}$, $k_\text{crew}$, $k_\text{genres}$, $k_\text{movies}$ and $k_\text{themes}$ are the maximum number of tuples for each movie in the respective dataset members,
-    \item $k_\text{members} := k_\text{actors} + k_\text{crew} + k_\text{genres} + k_\text{movies} + k_\text{themes}$,
+    \item $k_\text{actors}$, $k_\text{crew}$, $k_\text{genres}$, $k_\text{movies}$ and $k_\text{themes}$ are the maximum number of tuples for a movie in the respective dataset members,
+    \item $k_\text{members} \coloneq k_\text{actors} + k_\text{crew} + k_\text{genres} + k_\text{movies} + k_\text{themes}$,
     \item $p$ is the amount of components of the vector after data embedding and before standardization, in our experiments $p=910$,
     \item $c<<n$ number of candidate pairs.
 \end{itemize}
@@ -231,40 +219,39 @@ Following the steps of the experiment in Table we outline the communication cost
         \multicolumn{3}{c}{\textit{Data loading}} \\
         \cmidrule(lr){1-3} 
         csv to RDD  & map & $\leq n\cdot k_\text{members}$ \\
-        get and remove column names & filter \& map & $n$ \\
-        associate each value with its attribute & map & $n$ \\[4pt]
+        get and remove column names & filter \& map & $\leq n\cdot k_\text{members}$ \\
+        associate each value with its attribute & map & $\leq n\cdot k_\text{members}$ \\[4pt]
 
         \multicolumn{3}{c}{\textit{Data polishing}} \\
         \cmidrule(lr){1-3} 
-        polish \textit{crews} member & filter \& map & $\leq n\cdot k_\text{crew}$ \\
+        polish \attribute{crews} member & filter \& map & $\leq n\cdot k_\text{crew}$ \\
         list multiple values for an attribute & reduceByKey & $\leq n\cdot k_\text{members}$ \\
-        polish \textit{actors} member & map & $\leq n\cdot k_\text{actor}$ \\
+        polish \attribute{actors} member & map & $\leq n\cdot k_\text{actor}$ \\
         collect all movie features & union \& reduceByKey & $\leq n\cdot k_\text{members}$ \\[4pt]
 
         \multicolumn{3}{c}{\textit{Data embedding}} \\
         \cmidrule(lr){1-3} 
-        natural language processing for \textit{themes} & map & $n$ \\
-        spaCy word vectorization for \textit{titles}, \textit{genres} and \textit{themes} & map & $n$ \\
-        string hashing for \textit{actors} and \textit{directors} & map & $n$ \\
-        average list values & map & $n$ \\
-        dictionary to array of values  & map & $n$ \\[4pt]
+        natural language processing for \attribute{themes} & map & $n$ \\
+        word vectorization for \attribute{titles}, \attribute{genres} and \attribute{themes} & map & $n$ \\
+        string hashing for \attribute{actors} and \attribute{directors} & map & $n$ \\
+        average list type values & map & $n$ \\
+        dictionary of values to vector   & map & $n$ \\[4pt]
         
         \multicolumn{3}{c}{\textit{Data standardization}} \\
         \cmidrule(lr){1-3} 
-        sum and count per list index & flatMap & $n$ \\
-        get sample mean per list index & map & $n\cdot p$ \\
-        sum fof square differences and count per list index & flatMap & $n$ \\
-        get standard sample deviation per list index & map & $n\cdot p$ \\
+        divide items by vector components & flatMap & $n\cdot p$ \\
+        sum / sum of squares and count per list index & reduceByKey & $n$ \\
+        get sample mean /  standard deviation per list index & map & $p$ \\
         standardize vectors & map & $n$ \\[4pt]
         
         \multicolumn{3}{c}{\textit{Dimension reduction}} \\
         \cmidrule(lr){1-3} 
-        apply PCA & map \& reduce & $n$ \\
-        reduce vectors to $k_{t_\text{PCA}}$ components & map & $n$ \\[4pt]
+        build covariance matrix for PCA & map \& reduce & $n$ \\
+        reduce vectors down to $k_{t_\text{PCA}}$ components & map & $n$ \\[4pt]
 
         \multicolumn{3}{c}{\textit{Building the signature matrix}} \\
         \cmidrule(lr){1-3} 
-        create locality sensitive family & map & $l$ \\
+        create locality sensitive family for cosine distance & map & $l$ \\
         associate vectors to all hash functions & cartesian & $n+l$ \\
         compute signs of dot products & map & $n\cdot l$ \\
         build signatures & groupByKey & $n \cdot l$ \\ [4pt]
@@ -272,22 +259,23 @@ Following the steps of the experiment in Table we outline the communication cost
         \multicolumn{3}{c}{\textit{Banding the signature matrix}} \\
         \cmidrule(lr){1-3}
         band the signatures & map & $n$ \\
-        banding the signatures & map & $n$ \\[4pt]
+        hash each band in the signatures & map & $n$ \\[4pt]
         
         \multicolumn{3}{c}{\textit{Finding the candidate pairs}} \\
         \cmidrule(lr){1-3} 
-        separate all signature values by band & flatMap & $n$ \\
-        collect all bands with same value & groupByKey & $n\cdot b$ \\
+        separate signature values by band & flatMap & $n$ \\
+        for each band collect movies having same value & groupByKey & $n\cdot b$ \\
         get all bands with multiple common values & filter & $n\cdot b$ \\
-        get candidate pairs & flatMap & $<c$ \\[4pt]
+        combine possible candidate pairs & flatMap & $\leq c$ \\[4pt]
         
         \multicolumn{3}{c}{\textit{Filtering similar items}} \\
         \cmidrule(lr){1-3}  
-        associate candidate pairs to original vectors & LeftOuterJoin \& map & $c$ \\
+        associate candidate pairs to original vectors & leftOuterJoin \& map & $n + c$ \\
         fetch similar items & filter & $c$ \\[4pt]
         \bottomrule
     \end{tabularx}
     \caption{Communication cost for each task}\label{tab:parametriInput}
+    \label{tab:communicationCost}
 \end{table}
 
 Since the quantities $k_\text{actors}$, $k_\text{crew}$, $k_\text{genres}$, $k_\text{movies}$ and $k_\text{themes}$, and $l$, $p$ and $c$ are constants they are irrelevant to determine the cumulative communication cost. We conclude that the communication cost of the entire experiment is in the order of $O(n)$.
