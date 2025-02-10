@@ -12,7 +12,8 @@ This repository contains two main files:
 For the rendering of the report in pdf format, refer to [release](https://github.com/LuciaMellini/AMD_project).
 
 ### Additional contents
-* `evaluation_data/prepare_evaluation_data.py` the script used to fetch all the data from [TMDB](https://www.themoviedb.org/) used to evalute the results.
+* `data_evaluation/data_evaluation.ipynb` the code used to extract the results found in the report,
+* `data_evaluation/prepare_evaluation_data.py` the script used to fetch all the data from [TMDB](https://www.themoviedb.org/) used to evaluate the results. 
 
 ## Prerequisites
 To be able to download the dataset it is necessary to authenticate with a Kaggle username and token<sup>[1](#fn1)</sup>. At this scope the first code block in the notebook `project.ipynb` is intended to be filled out with your personal username and key in the respective fields, like suggested below.
