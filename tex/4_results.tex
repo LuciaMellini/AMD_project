@@ -1,0 +1,85 @@
+\chapter{Results}\label{results}
+In this Chapter we describe the experiments that have been brought out, and the quality of the results compared to the baseline similar movies. The experiments have been conducted according to the steps schematized in Section~\ref{experiments_steps}. 
+
+\section{Baseline}
+We have noticed that the Letterboxd website offers a feature to find similar movies. Un fortunately etterboxd does not offer an API to extract this data. As stated in their About/Film data page\footnote{Letterboxd - Film data page \url{https://letterboxd.com/about/film-data/}} ``all film-related metadata used in Letterboxd, including actor, director and studio names, synopses, release dates, trailers and poster art is supplied by The Movie Database (TMDb)''. We have thus exploited the API provided by TMDB to get a baseline of similar movies to compare to our results. As stated in the API reference\footnote{API reference for the similar movies method \url{https://developer.themoviedb.org/reference/movie-similar}} the method ``only looks for other items based on genres and plot keywords''. Compared to TMDB we have used a large variety of features to determine the similarity between movies (recall~\ref{preProcessing_embedding}). Also, we have not analyzed the movie plots, so we expect the similar movies suggested by TMDB to be different from the ones we have found. We have still referred to these similarities not so much to score our results with respect to TMDB’s concept of similarity, rather to have a rough idea of the quality of our results for each experiment.
+
+\section{Experiment results}We now delve into the results that have been found on a sample of the dataset, taking into account only the movies with the first $100$ ids.
+
+\subsection{Chosen parameters}
+We begin by defining the parameters that have been chosen for the experiments. We refer to the quantities listed in Section~\ref{experiments_parameters}.
+Simply speaking we have set the signature length ($l$) to values in $\{50,100, 500\}$. We also have moved the S-curve as to decrease the amount of false negatives slightly and more bruskly. We have determined the values $b$ and $r$ as if the inflection points of the thresholds where $0.5$, $0.6$ and $0.8$. Looking at figure~\ref{fig:s-curve1}, this is equivalent to fixing the threshold $t=0.5$ in $s^*$ and gradually shifting the curve to the right by increasing the x-coordinate of the inflection point. Also, we have tried changing the hash bucket size ($h$) to values in $\{2^{(r+1)}, 2^{(r+2)}\}$, stemming from the cardinality of set $\{-1, 1\}^r$. We have added an increasing margin to such quantity to reduce collisions on the hash buckets. Combining all these aspects in parameter choice, we obtain the experiments listed in Table~\ref{tab:parameters}. Furthermore, we have fixed the amount of explained variance for vector reduction ($t_\text{PCA}$) to $0.95$ for all of our experiments to (ideally) avoid the results depending on the expressiveness of the principal components. 
+
+\begin{table}[h]
+    \centering
+    \caption{Experiment parameters}
+    \centering
+    \begin{tabular}{r|cccc}
+        \toprule
+        \textbf{Exp.} & $\mathbf{l}$ & $\mathbf{b}$ & $\mathbf{r}$ & $\mathbf{h}$ \\
+        \midrule
+        1  & 50  & 17  & 3  & $2^4$   \\
+        2  & 50  & 17  & 3  & $2^5$   \\
+        3  & 50  & 13  & 4  & $2^5$   \\
+        4  & 50  & 13  & 4  & $2^6$   \\
+        5  & 50  & 7   & 8  & $2^9$   \\
+        6  & 50  & 7   & 8  & $2^{10}$ \\[6pt]
+        7  & 100 & 25  & 4  & $2^5$   \\
+        8  & 100 & 25  & 4  & $2^6$   \\
+        9  & 100 & 20  & 5  & $2^6$   \\
+        10 & 100 & 20  & 5  & $2^7$   \\
+        11 & 100 & 10  & 10 & $2^{11}$ \\
+        12 & 100 & 10  & 10 & $2^{12}$ \\[6pt]
+        13 & 200 & 40  & 5  & $2^6$   \\
+        14 & 200 & 40  & 5  & $2^7$   \\
+        15 & 200 & 34  & 6  & $2^7$   \\
+        16 & 200 & 34  & 6  & $2^8$   \\
+        17 & 200 & 17  & 12 & $2^{13}$ \\
+        18 & 200 & 17  & 12 & $2^{14}$ \\
+        \bottomrule
+    \end{tabular}
+    \label{tab:parameters}
+\end{table}
+
+\subsection{Result discussion}
+We analyze the quality of the results against the baseline through the sensitivity and specificity measures. We have computed these quality measures for various thresholds of similarity, namely $0.6$ and $0.8$. The values of sensitivity and specificity for each experiment are listed in Table~\ref{tab:quality}. Given the selected parameters, the values in the green zone result from a smaller amount of false negatives. Conversely, the violet areas indicate that in the relative values a related to a lower occurence of false positives.
+\definecolor{violet}{rgb}{0.8,0.8,0.9}
+\definecolor{green}{rgb}{0.9,1,0.9}
+\begin{table}
+    \centering
+    \caption{Quality measures for each experiment}    
+    \begin{tabular}{r|cc|cc|cc}
+        \toprule
+          \multirow{2}{*}{\textbf{Exp.}} & \multicolumn{2}{c}{$t=0.6$} & \multicolumn{2}{c}{$t=0.8$} \\
+            \cmidrule(lr){2-3} \cmidrule(lr){4-5}
+         & \textbf{Sensitivity} & \textbf{Specificity} & \textbf{Sensitivity} & \textbf{Specificity} \\
+        \midrule
+        1  & \cellcolor{green}0.0237  & \cellcolor{green}0.9812  & \cellcolor{green}0.0102 & \cellcolor{green}0.99496 \\  
+        2  & \cellcolor{green}0.0237  & \cellcolor{green}0.9817  & \cellcolor{green}0.00848 & \cellcolor{green}0.99363 \\  
+        7  & \cellcolor{green}0.0203  & \cellcolor{green}0.9804  & \cellcolor{green}0.00721 & \cellcolor{green}0.99271 \\  
+        8  & \cellcolor{green}0.0203  & \cellcolor{green}0.9806  & \cellcolor{green}0.00763 & \cellcolor{green}0.99284 \\  
+        13 & \cellcolor{green}0.0187  & \cellcolor{green}0.9798  & \cellcolor{green}0.00636 & \cellcolor{green}0.99297 \\  
+        14 & \cellcolor{green}0.0246  & \cellcolor{green}0.9820  & \cellcolor{green}0.00805 & \cellcolor{green}0.99244 \\  [6pt] 
+       
+
+        3  & 0.0178  & 0.9798  & \cellcolor{green}0.00466 & \cellcolor{green}0.99058 \\  
+        4  & 0.0212  & 0.9817  & \cellcolor{green}0.00509 & \cellcolor{green}0.99204 \\ 
+        9  & 0.0212  & 0.9817  & \cellcolor{green}0.00763 & \cellcolor{green}0.99390 \\  
+        10 & 0.0161  & 0.9809  & \cellcolor{green}0.00721 & \cellcolor{green}0.99430 \\  
+        15 & 0.0161  & 0.9798  & \cellcolor{green}0.00721 & \cellcolor{green}0.99271 \\  
+        16 & 0.0225  & 0.9826  & \cellcolor{green}0.00721 & \cellcolor{green}0.99191 \\ [6pt] 
+
+        5  & \cellcolor{violet}0.0081  & \cellcolor{violet}0.9916  & 0.00381 & 0.99695 \\  
+        6  & \cellcolor{violet}0.0072  & \cellcolor{violet}0.9951  & 0.00381 & 0.99775 \\          
+        11 & \cellcolor{violet}0.0025  & \cellcolor{violet}0.9971  & 0.00127 & 0.99907 \\  
+        12 & \cellcolor{violet}0.0013  & \cellcolor{violet}0.9988  & 0.00042 & 0.99960 \\          
+        17 & \cellcolor{violet}0.0013  & \cellcolor{violet}0.9988  & 0.0 & 0.99947 \\   
+        18 & \cellcolor{violet}0.0008  & \cellcolor{violet}0.9989  & 0.0 & 0.99947 \\ 
+        
+         
+         
+        \bottomrule
+    \end{tabular}
+    \label{tab:quality}
+\end{table}
+
