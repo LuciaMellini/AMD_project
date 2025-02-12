@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 API_KEY = '134f6127b94264ff458f2b2b0ace38fd'
 BASE_URL = 'https://api.themoviedb.org/3'
-DATA_DIR = 'evaluation_data/'
+DATA_DIR = 'data_evaluation/'
 
 
 def get_movies_in_dataset(filename, sample_size = None):
@@ -88,7 +88,7 @@ def get_similar_movie_ids(movie_df, n_pages, filename=None):
         similar_movie_ids = {movie['tmdb_id']: list(set(search_similar_movie_ids(movie['tmdb_id'], n_pages))) 
                         for idx, movie in tqdm(movies_df.iterrows(), total=n_movies, desc="Extracting similar movies from TMDB")}
         
-        valid_ids = set(movies_df['tmdb_id'])
+        valid_ids = set(movie_df['tmdb_id'])
         similar_movie_ids = {movie_id: [similar_id for similar_id in similar_list if similar_id in valid_ids] 
                         for movie_id, similar_list in similar_movie_ids.items()}
         if filename:                    
@@ -103,8 +103,8 @@ if __name__ == "__main__":
     movies_df = get_movies_in_dataset('letterboxd/movies.csv', sample_size=n_movies)
     movies_df = movies_df[['id', 'name', 'date']]
     
-    id_to_tmdb_id = get_id_map(DATA_DIR + "movie_ids_map_test.json")     
+    id_to_tmdb_id = get_id_map(DATA_DIR + "movie_ids_map.json")     
     movies_df['tmdb_id'] = movies_df['id'].map(id_to_tmdb_id)
     
-    similar_movies = get_similar_movie_ids(movies_df, 10, DATA_DIR + "similar_movies_test.json")
+    similar_movies = get_similar_movie_ids(movies_df, 500, DATA_DIR + "similar_movies.json")
   
