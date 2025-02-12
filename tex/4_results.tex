@@ -8,7 +8,7 @@ We have noticed that the Letterboxd website offers a feature to find similar mov
 
 \subsection{Chosen parameters}
 We begin by defining the parameters that have been chosen for the experiments. We refer to the quantities listed in Section~\ref{experiments_parameters}.
-Simply speaking we have set the signature length ($l$) to values in $\{50,100, 500\}$. We also have moved the S-curve as to decrease the amount of false negatives slightly and more bruskly. We have determined the values $b$ and $r$ as if the inflection points of the thresholds where $0.5$, $0.6$ and $0.8$. Looking at figure~\ref{fig:s-curve1}, this is equivalent to fixing the threshold $t=0.5$ in $s^*$ and gradually shifting the curve to the right by increasing the x-coordinate of the inflection point. Also, we have tried changing the hash bucket size ($h$) to values in $\{2^{(r+1)}, 2^{(r+2)}\}$, stemming from the cardinality of set $\{-1, 1\}^r$. We have added an increasing margin to such quantity to reduce collisions on the hash buckets. Combining all these aspects in parameter choice, we obtain the experiments listed in Table~\ref{tab:parameters}. Furthermore, we have fixed the amount of explained variance for vector reduction ($t_\text{PCA}$) to $0.95$ for all of our experiments to (ideally) avoid the results depending on the expressiveness of the principal components. 
+We have set the signature length ($l$) to values in $\{50,100, 200\}$; seen the property of hash function distributing values uniformly as random, ideally with signature length $100$ we produce a distinct signature of each element in the dataset. We also have moved the S-curve as to increase the amount of false positives slightly and more bruskly. We have determined the values $b$ and $r$ as if the inflection points of the thresholds where $0.5$, $0.6$ and $0.8$. Looking at figure~\ref{fig:s-curve1}, this is equivalent to fixing the threshold $t=0.5$ in $s^*$ and gradually shifting the curve to the right by increasing the x-coordinate of the inflection point. Also, we have tried changing the hash bucket size ($h$) to values in $\{2^{(r+1)}, 2^{(r+2)}\}$, stemming from the cardinality of set $\{-1, 1\}^r$. We have added an increasing margin to such quantity to reduce collisions on the hash buckets. Combining all these aspects in parameter choice, we obtain the experiments listed in Table~\ref{tab:parameters}. Furthermore, we have fixed the amount of explained variance for vector reduction ($t_\text{PCA}$) to $0.95$ for all of our experiments to (ideally) avoid the results depending on the expressiveness of the principal components. 
 
 \begin{table}[h]
     \centering
@@ -42,44 +42,54 @@ Simply speaking we have set the signature length ($l$) to values in $\{50,100, 5
 \end{table}
 
 \subsection{Result discussion}
-We analyze the quality of the results against the baseline through the sensitivity and specificity measures. We have computed these quality measures for various thresholds of similarity, namely $0.6$ and $0.8$. The values of sensitivity and specificity for each experiment are listed in Table~\ref{tab:quality}. Given the selected parameters, the values in the green zone result from a smaller amount of false negatives. Conversely, the violet areas indicate that in the relative values a related to a lower occurence of false positives.
+We analyze the quality of the results against the baseline through the sensitivity and specificity measures. We have computed these quality measures for various thresholds of similarity, namely $0.6$ and $0.8$. The values of sensitivity and specificity for each experiment are listed in Table~\ref{tab:quality}. We have rearranged the order of the experiments such that the first section of the table is reserved to the experiments where $r$ and $b$ such that the inflection point of the S-curve has x-coordinate in $0.5$. The rows below are respectively dedicated to the experiments where the inflection point is in $0.6$ and $0.8$. 
+Considering the selected parameters, the values in the green zone result from a smaller amount of false positives. Conversely, the violet areas indicate that in the relative values a related to a lower occurrence of false negatives. 
+Logically, in the first two sections in the table the specificity rises when moving towards the right. Vice versa in the last section the sensitivity increasing when looking at the leftmost quadrant.
 \definecolor{violet}{rgb}{0.8,0.8,0.9}
 \definecolor{green}{rgb}{0.9,1,0.9}
 \begin{table}
     \centering
     \caption{Quality measures for each experiment}    
-    \begin{tabular}{r|cc|cc|cc}
+    \begin{tabular}{rcccccc}
         \toprule
-          \multirow{2}{*}{\textbf{Exp.}} & \multicolumn{2}{c}{$t=0.6$} & \multicolumn{2}{c}{$t=0.8$} \\
+          \multirow{2}{*}{\textbf{Experiment}} & \multicolumn{2}{c}{$t=0.6$} & \multicolumn{2}{c}{$t=0.8$} \\
             \cmidrule(lr){2-3} \cmidrule(lr){4-5}
          & \textbf{Sensitivity} & \textbf{Specificity} & \textbf{Sensitivity} & \textbf{Specificity} \\
         \midrule
-        1  & \cellcolor{green}0.0237  & \cellcolor{green}0.9812  & \cellcolor{green}0.0102 & \cellcolor{green}0.99496 \\  
-        2  & \cellcolor{green}0.0237  & \cellcolor{green}0.9817  & \cellcolor{green}0.00848 & \cellcolor{green}0.99363 \\  
-        7  & \cellcolor{green}0.0203  & \cellcolor{green}0.9804  & \cellcolor{green}0.00721 & \cellcolor{green}0.99271 \\  
-        8  & \cellcolor{green}0.0203  & \cellcolor{green}0.9806  & \cellcolor{green}0.00763 & \cellcolor{green}0.99284 \\  
-        13 & \cellcolor{green}0.0187  & \cellcolor{green}0.9798  & \cellcolor{green}0.00636 & \cellcolor{green}0.99297 \\  
-        14 & \cellcolor{green}0.0246  & \cellcolor{green}0.9820  & \cellcolor{green}0.00805 & \cellcolor{green}0.99244 \\  [6pt] 
+        1  & \cellcolor{green}0.0237  & \cellcolor{green}0.9814  & \cellcolor{green}0.0102 & \cellcolor{green}0.9950 \\  
+        2  & \cellcolor{green}0.0237  & \cellcolor{green}0.9817  & \cellcolor{green}0.0085 & \cellcolor{green}0.9936 \\  
+        7  & \cellcolor{green}0.0203  & \cellcolor{green}0.9803  & \cellcolor{green}0.0072 & \cellcolor{green}0.9927 \\  
+        8  & \cellcolor{green}0.0203  & \cellcolor{green}0.9806  & \cellcolor{green}0.0076 & \cellcolor{green}0.9928 \\  
+        13 & \cellcolor{green}0.0187  & \cellcolor{green}0.9798  & \cellcolor{green}0.0064 & \cellcolor{green}0.9930 \\  
+        14 & \cellcolor{green}0.0246  & \cellcolor{green}0.9820  & \cellcolor{green}0.0081 & \cellcolor{green}0.9924 \\  [6pt] 
        
 
-        3  & 0.0178  & 0.9798  & \cellcolor{green}0.00466 & \cellcolor{green}0.99058 \\  
-        4  & 0.0212  & 0.9817  & \cellcolor{green}0.00509 & \cellcolor{green}0.99204 \\ 
-        9  & 0.0212  & 0.9817  & \cellcolor{green}0.00763 & \cellcolor{green}0.99390 \\  
-        10 & 0.0161  & 0.9809  & \cellcolor{green}0.00721 & \cellcolor{green}0.99430 \\  
-        15 & 0.0161  & 0.9798  & \cellcolor{green}0.00721 & \cellcolor{green}0.99271 \\  
-        16 & 0.0225  & 0.9826  & \cellcolor{green}0.00721 & \cellcolor{green}0.99191 \\ [6pt] 
+        3  & 0.0178  & 0.9798  & \cellcolor{green}0.0047 & \cellcolor{green}0.9906 \\  
+        4  & 0.0212  & 0.9817  & \cellcolor{green}0.0051 & \cellcolor{green}0.9920 \\ 
+        9  & 0.0212  & 0.9817  & \cellcolor{green}0.0076 & \cellcolor{green}0.9939 \\  
+        10 & 0.0161  & 0.9809  & \cellcolor{green}0.0072 & \cellcolor{green}0.9943 \\  
+        15 & 0.0161  & 0.9798  & \cellcolor{green}0.0072 & \cellcolor{green}0.9927 \\  
+        16 & 0.0225  & 0.9826  & \cellcolor{green}0.0072 & \cellcolor{green}0.9919 \\ [6pt] 
 
-        5  & \cellcolor{violet}0.0081  & \cellcolor{violet}0.9916  & 0.00381 & 0.99695 \\  
-        6  & \cellcolor{violet}0.0072  & \cellcolor{violet}0.9951  & 0.00381 & 0.99775 \\          
-        11 & \cellcolor{violet}0.0025  & \cellcolor{violet}0.9971  & 0.00127 & 0.99907 \\  
-        12 & \cellcolor{violet}0.0013  & \cellcolor{violet}0.9988  & 0.00042 & 0.99960 \\          
-        17 & \cellcolor{violet}0.0013  & \cellcolor{violet}0.9988  & 0.0 & 0.99947 \\   
-        18 & \cellcolor{violet}0.0008  & \cellcolor{violet}0.9989  & 0.0 & 0.99947 \\ 
-        
-         
+        5  & \cellcolor{violet}0.0081  & \cellcolor{violet}0.9916  & 0.0038 & 0.9970 \\  
+        6  & \cellcolor{violet}0.0072  & \cellcolor{violet}0.9951  & 0.0038 & 0.9978 \\          
+        11 & \cellcolor{violet}0.0025  & \cellcolor{violet}0.9971  & 0.0013 & 0.9991 \\  
+        12 & \cellcolor{violet}0.0013  & \cellcolor{violet}0.9988  & 0.0004 & 0.9996 \\          
+        17 & \cellcolor{violet}0.0013  & \cellcolor{violet}0.9988  & 0.0000 & 0.9995 \\   
+        18 & \cellcolor{violet}0.0008  & \cellcolor{violet}0.9989  & 0.0000 & 0.9995 \\ 
          
         \bottomrule
     \end{tabular}
     \label{tab:quality}
 \end{table}
+ 
+Since the latter results simply reflect the considerations emerging in Paragraph~\ref{choosingCandidatePairs}(choosing $r$ and $b$) we will focus on the choice of other parameters. 
+
+\subsubsection{Signature length}
+Generally, with the increase of signature length the sensitivity value decreases. This is due to the higher number of rows in each bands, that reduces the probability that a pair becomes candidate. So, we are creating possible false negatives. In the central section though the sensitivity values tend to be stable among the various signature length. Possibly the sizes chosen for the bands compensate for the change in signature length, or simply are dependant on the approximate nature of the experiment. 
+Concerning specificity we notice some isolated patterns. In the first section the specificity values for the smallest signature length are the highest. Maybe the false positive rate is lower because a smaller signature gives less possibilities for two pairs to be candidates, so the results are more conservative. In the case of high signatures, even thought the bands are larger, there are more opportunities for two items to have equal bands. Instead, the last section shows an increase of specificity as the signature length grows, for both thresholds. since the S-curve is calibrated on a higher similarity threshold, so the bands are greater. The candidate pairs that are detected by using greater bands, as a results of higher signature length, are probably more reliable with respect to the baseline.
+
+\paragraph{Hash bucket size}
+Since possible hash collisions in the band influence the amount of false positives, we focus only on the specificity data. Generally the specificity tends to increase when duplicating the amount of buckets to hash a band. As expected the number of false negatives decreases since there is less chance of collisions. This is consistent in the last section, possibily beacause it is harder to ``fake'' a similarity between items that exceeds $0.8$.
+
 
