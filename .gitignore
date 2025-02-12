@@ -30,3 +30,4 @@
 *.run.xml
 
 spark*/
+/data
