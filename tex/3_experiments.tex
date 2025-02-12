@@ -185,7 +185,7 @@ The experiments described in the previous section have been implemented using ob
         \end{array}$$
     where $v_{ij}$ is the value in position $j$ for movie $id_i$. Hence, when these rows are reduced by key we obtain the lists of movie ids that have the same value in a given band in their hashed signature. It is then sufficient to create all the possible pair combinations between candidate movies. 
     
-    \item [Filtering similar items] To pinpoint the actual similar items among the candidate pairs, we associate each row in \texttt{candidate\_pairs\_RDD} with their movies' vector representations stored in \texttt{vectors\_RDD}. The intermediate RDD \texttt{candidate\_pairs\_with\_similarity\_RDD} has the following format.
+    \item [Filtering similar items] To pinpoint the actual similar items among the candidate pairs, we associate each row in \texttt{candidate\_pairs\_RDD} with the original movies' vector representations stored in \texttt{vectors\_RDD}. The intermediate RDD \texttt{candidate\_pairs\_with\_similarity\_RDD} has the following format.
         $$\begin{array}{c}
             ((id_i, id_j), ([e_{i1}, e_{i2}, \dots, e_{ip}], [e_{j1}, e_{j2}, \dots, e_{jp}]))\\
         \end{array}$$
