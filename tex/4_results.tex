@@ -1,14 +1,25 @@
 \chapter{Results}\label{results}
-In this Chapter we describe the experiments that have been brought out, and the quality of the results compared to the baseline similar movies. The experiments have been conducted according to the steps schematized in Section~\ref{experiments_steps}. 
+In this Chapter we describe the experiments that have been brought out according to the steps schematized in Section~\ref{experiments_steps}. We then analyze the quality of the results compared to the baseline similar movies. 
 
 \section{Baseline}
-We have noticed that the Letterboxd website offers a feature to find similar movies. Un fortunately etterboxd does not offer an API to extract this data. As stated in their About/Film data page\footnote{Letterboxd - Film data page \url{https://letterboxd.com/about/film-data/}} ``all film-related metadata used in Letterboxd, including actor, director and studio names, synopses, release dates, trailers and poster art is supplied by The Movie Database (TMDb)''. We have thus exploited the API provided by TMDB to get a baseline of similar movies to compare to our results. As stated in the API reference\footnote{API reference for the similar movies method \url{https://developer.themoviedb.org/reference/movie-similar}} the method ``only looks for other items based on genres and plot keywords''. Compared to TMDB we have used a large variety of features to determine the similarity between movies (recall~\ref{preProcessing_embedding}). Also, we have not analyzed the movie plots, so we expect the similar movies suggested by TMDB to be different from the ones we have found. We have still referred to these similarities not so much to score our results with respect to TMDB’s concept of similarity, rather to have a rough idea of the quality of our results for each experiment.
+We have noticed that the Letterboxd website offers a feature to find similar movies. Un fortunately Letterboxd does not offer an API to extract this data. As stated in their \textit{About/Film data} page\footnote{Letterboxd - Film data page \url{https://letterboxd.com/about/film-data/}} 
+\begin{quote}
+    ``all film-related metadata used in Letterboxd, including actor, director and studio names, synopses, release dates, trailers and poster art is supplied by The Movie Database (TMDb)''.
+\end{quote}
+We have thus exploited the API provided by TMDB to get a baseline of similar movies to compare to our results. As stated in the API reference\footnote{API reference for the similar movies method \url{https://developer.themoviedb.org/reference/movie-similar}} the method ``only looks for other items based on genres and plot keywords''. Compared to TMDB we have used a large variety of features to determine the similarity between movies (recall~\ref{preProcessing_embedding}). Also, we have not analyzed the movie plots, so we expect the similar movies suggested by TMDB to be different from the ones we have found. We have still relied on these similarities not so much to score our results with respect to TMDB’s concept of similarity, rather to have a rough idea of the quality of our results between experiments.
 
 \section{Experiment results}We now delve into the results that have been found on a sample of the dataset, taking into account only the movies with the first $100$ ids.
 
 \subsection{Chosen parameters}
-We begin by defining the parameters that have been chosen for the experiments. We refer to the quantities listed in Section~\ref{experiments_parameters}.
-We have set the signature length ($l$) to values in $\{50,100, 200\}$; seen the property of hash function distributing values uniformly as random, ideally with signature length $100$ we produce a distinct signature of each element in the dataset. We also have moved the S-curve as to increase the amount of false positives slightly and more bruskly. We have determined the values $b$ and $r$ as if the inflection points of the thresholds where $0.5$, $0.6$ and $0.8$. Looking at figure~\ref{fig:s-curve1}, this is equivalent to fixing the threshold $t=0.5$ in $s^*$ and gradually shifting the curve to the right by increasing the x-coordinate of the inflection point. Also, we have tried changing the hash bucket size ($h$) to values in $\{2^{(r+1)}, 2^{(r+2)}\}$, stemming from the cardinality of set $\{-1, 1\}^r$. We have added an increasing margin to such quantity to reduce collisions on the hash buckets. Combining all these aspects in parameter choice, we obtain the experiments listed in Table~\ref{tab:parameters}. Furthermore, we have fixed the amount of explained variance for vector reduction ($t_\text{PCA}$) to $0.95$ for all of our experiments to (ideally) avoid the results depending on the expressiveness of the principal components. 
+We define the parameters that have been chosen for the experiments, referring to the quantities listed in Section~\ref{experiments_parameters}.
+
+We have set the signature length ($l$) to values in $\{50,100, 200\}$; seen the uniform distribution of hash functions, ideally with signature length $100$ we produce a distinct signature of all elements in the dataset. 
+
+We have determined the values $b$ and $r$ as if the inflection points of the thresholds where $0.5$, $0.6$ and $0.8$. Looking at figure~\ref{fig:s-curve1}, this is equivalent to fixing the threshold $t=0.5$ in $s^*$ and gradually shifting the curve to the right by increasing the x-coordinate of the inflection point. 
+
+Moreover we have tried changing the hash bucket size ($h$) to values in $\{2^{(r+1)}, 2^{(r+2)}\}$, stemming from the cardinality of set $\{-1, 1\}^r$. The increased margin is intended to reduce collisions on the hash buckets. Combining all these aspects in parameter choice, we obtain the experiments listed in Table~\ref{tab:parameters}. 
+
+We have fixed the amount of explained variance for vector reduction ($t_\text{PCA}$) to $0.95$ for all of our experiments to (ideally) avoid the results depending on the expressiveness of the principal components. 
 
 \begin{table}[h]
     \centering
@@ -23,13 +34,13 @@ We have set the signature length ($l$) to values in $\{50,100, 200\}$; seen the 
         3  & 50  & 13  & 4  & $2^5$   \\
         4  & 50  & 13  & 4  & $2^6$   \\
         5  & 50  & 7   & 8  & $2^9$   \\
-        6  & 50  & 7   & 8  & $2^{10}$ \\[6pt]
+        6  & 50  & 7   & 8  & $2^{10}$ \\[4pt]
         7  & 100 & 25  & 4  & $2^5$   \\
         8  & 100 & 25  & 4  & $2^6$   \\
         9  & 100 & 20  & 5  & $2^6$   \\
         10 & 100 & 20  & 5  & $2^7$   \\
         11 & 100 & 10  & 10 & $2^{11}$ \\
-        12 & 100 & 10  & 10 & $2^{12}$ \\[6pt]
+        12 & 100 & 10  & 10 & $2^{12}$ \\[4pt]
         13 & 200 & 40  & 5  & $2^6$   \\
         14 & 200 & 40  & 5  & $2^7$   \\
         15 & 200 & 34  & 6  & $2^7$   \\
@@ -42,9 +53,10 @@ We have set the signature length ($l$) to values in $\{50,100, 200\}$; seen the 
 \end{table}
 
 \subsection{Result discussion}
-We analyze the quality of the results against the baseline through the sensitivity and specificity measures. We have computed these quality measures for various thresholds of similarity, namely $0.6$ and $0.8$. The values of sensitivity and specificity for each experiment are listed in Table~\ref{tab:quality}. We have rearranged the order of the experiments such that the first section of the table is reserved to the experiments where $r$ and $b$ such that the inflection point of the S-curve has x-coordinate in $0.5$. The rows below are respectively dedicated to the experiments where the inflection point is in $0.6$ and $0.8$. 
-Considering the selected parameters, the values in the green zone result from a smaller amount of false positives. Conversely, the violet areas indicate that in the relative values a related to a lower occurrence of false negatives. 
-Logically, in the first two sections in the table the specificity rises when moving towards the right. Vice versa in the last section the sensitivity increasing when looking at the leftmost quadrant.
+We analyze the quality of the results against the baseline through the sensitivity and specificity measures. We have computed these quality measures for various thresholds of similarity, namely $0.6$ and $0.8$. The values of sensitivity and specificity for each experiment are listed in Table~\ref{tab:quality}. We have rearranged the order of the experiments such that the uppermost section of the table is reserved to the experiments where $r$ and $b$ are such that the inflection point of the S-curve has x-coordinate in $0.5$. The rows below are dedicated respectively to the experiments where the inflection point is in $0.6$ and $0.8$. 
+
+Considering the selected parameters, the values in the green zone result from a smaller amount of false positives. Conversely, the violet areas indicate that the values are related to a lower occurrence of false negatives. 
+Logically, in the first two sections in the table the specificity rises when moving towards the right. Vice versa in the lowest section the sensitivity increases on the left column.
 \definecolor{violet}{rgb}{0.8,0.8,0.9}
 \definecolor{green}{rgb}{0.9,1,0.9}
 \begin{table}
@@ -61,7 +73,7 @@ Logically, in the first two sections in the table the specificity rises when mov
         7  & \cellcolor{green}0.0203  & \cellcolor{green}0.9803  & \cellcolor{green}0.0072 & \cellcolor{green}0.9927 \\  
         8  & \cellcolor{green}0.0203  & \cellcolor{green}0.9806  & \cellcolor{green}0.0076 & \cellcolor{green}0.9928 \\  
         13 & \cellcolor{green}0.0187  & \cellcolor{green}0.9798  & \cellcolor{green}0.0064 & \cellcolor{green}0.9930 \\  
-        14 & \cellcolor{green}0.0246  & \cellcolor{green}0.9820  & \cellcolor{green}0.0081 & \cellcolor{green}0.9924 \\  [6pt] 
+        14 & \cellcolor{green}0.0246  & \cellcolor{green}0.9820  & \cellcolor{green}0.0081 & \cellcolor{green}0.9924 \\  [4pt] 
        
 
         3  & 0.0178  & 0.9798  & \cellcolor{green}0.0047 & \cellcolor{green}0.9906 \\  
@@ -69,7 +81,7 @@ Logically, in the first two sections in the table the specificity rises when mov
         9  & 0.0212  & 0.9817  & \cellcolor{green}0.0076 & \cellcolor{green}0.9939 \\  
         10 & 0.0161  & 0.9809  & \cellcolor{green}0.0072 & \cellcolor{green}0.9943 \\  
         15 & 0.0161  & 0.9798  & \cellcolor{green}0.0072 & \cellcolor{green}0.9927 \\  
-        16 & 0.0225  & 0.9826  & \cellcolor{green}0.0072 & \cellcolor{green}0.9919 \\ [6pt] 
+        16 & 0.0225  & 0.9826  & \cellcolor{green}0.0072 & \cellcolor{green}0.9919 \\ [4pt] 
 
         5  & \cellcolor{violet}0.0081  & \cellcolor{violet}0.9916  & 0.0038 & 0.9970 \\  
         6  & \cellcolor{violet}0.0072  & \cellcolor{violet}0.9951  & 0.0038 & 0.9978 \\          
@@ -86,10 +98,11 @@ Logically, in the first two sections in the table the specificity rises when mov
 Since the latter results simply reflect the considerations emerging in Paragraph~\ref{choosingCandidatePairs}(choosing $r$ and $b$) we will focus on the choice of other parameters. 
 
 \subsubsection{Signature length}
-Generally, with the increase of signature length the sensitivity value decreases. This is due to the higher number of rows in each bands, that reduces the probability that a pair becomes candidate. So, we are creating possible false negatives. In the central section though the sensitivity values tend to be stable among the various signature length. Possibly the sizes chosen for the bands compensate for the change in signature length, or simply are dependant on the approximate nature of the experiment. 
-Concerning specificity we notice some isolated patterns. In the first section the specificity values for the smallest signature length are the highest. Maybe the false positive rate is lower because a smaller signature gives less possibilities for two pairs to be candidates, so the results are more conservative. In the case of high signatures, even thought the bands are larger, there are more opportunities for two items to have equal bands. Instead, the last section shows an increase of specificity as the signature length grows, for both thresholds. since the S-curve is calibrated on a higher similarity threshold, so the bands are greater. The candidate pairs that are detected by using greater bands, as a results of higher signature length, are probably more reliable with respect to the baseline.
+Generally, with the increase of signature length the sensitivity value decreases. This is due to the higher number of rows in each band, that reduces the probability that a pair becomes candidate, potentially creating false negatives. In the central section though, the sensitivity values tend to be stable among the various signature lengths. Perhaps the chosen band sizes compensate for the signature length, or simply the values depend on the approximate nature of the experiments. 
 
-\paragraph{Hash bucket size}
-Since possible hash collisions in the band influence the amount of false positives, we focus only on the specificity data. Generally the specificity tends to increase when duplicating the amount of buckets to hash a band. As expected the number of false negatives decreases since there is less chance of collisions. This is consistent in the last section, possibily beacause it is harder to ``fake'' a similarity between items that exceeds $0.8$.
+Concerning specificity, we notice some isolated patterns. In the first section the specificity values for the signature length $50$ are the highest. Maybe the false positive rate is lower because it is less probable that a shorter signature produces a candidate pair. In the case of high signatures, even though the bands are larger, there are more opportunities for two items to have equal bands. Instead, the last section shows an increase of specificity as the signature length grows. Since the S-curve is calibrated on a higher similarity threshold, the bands are greater. The candidate pairs that are detected by using greater bands, are likely more reliable with respect to the baseline.
+
+\subsubsection{Hash bucket size}
+Since possible hash collisions in the band influence the amount of false positives, we focus only on the specificity data. Generally the specificity tends to increase when duplicating the amount of buckets to hash a band. As expected the number of false positives decreases since there are less chances of collision. This behaviour is consistent in the last section, possibly because it is harder to ``fake'' a similarity that exceeds $0.8$ between items.
 
 
